@@ -1,1597 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AEGIS | Strategic Intelligence Dashboard — Balochistan & Air Defense ~ AR-Tech</title>
-    <!-- Fonts & Leaflet -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-    <!-- 3D Maps & Advanced Visualization -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-fullscreen@3.0.0/Control.FullScreen.css" />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>ARGIS — Strategic Intelligence & Air Defense Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+/* ========== DARK NEURAL TOKENS ========== */
+:root {
+  --bg: #010508; --bg2: #030a0f; --panel: rgba(2,6,12,0.96);
+  --border: rgba(0,220,140,0.12); --border-r: rgba(255,55,40,0.2);
+  --border-b: rgba(0,165,255,0.12); --border-p: rgba(200,80,255,0.12);
+  --g: #00f090; --g2: rgba(0,240,144,0.08); --g3: rgba(0,240,144,0.03);
+  --r: #ff3a2a; --r2: rgba(255,58,42,0.1); --r3: rgba(255,58,42,0.03);
+  --a: #ffb023; --a2: rgba(255,176,35,0.1); --a3: rgba(255,176,35,0.03);
+  --b: #00ccff; --b2: rgba(0,204,255,0.08); --b3: rgba(0,204,255,0.03);
+  --p: #c850ff; --p2: rgba(200,80,255,0.1); --p3: rgba(200,80,255,0.03);
+  --text: #a5c0d0; --textd: #3e5569; --textb: #e6f7ff;
+  --glow-g: 0 0 12px rgba(0,240,144,0.5); --glow-r: 0 0 12px rgba(255,58,42,0.55);
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ background:var(--bg); color:var(--text); font-family:'Rajdhani',sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; background-image:radial-gradient(circle at 20% 30%, rgba(0,80,60,0.1) 0%, transparent 60%);}
+::-webkit-scrollbar{ width:3px; } ::-webkit-scrollbar-thumb{ background:var(--g); border-radius:2px; opacity:0.3;}
 
-        body {
-            background: #050a12;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: #e2edf7;
-            overflow: hidden;
-            height: 100vh;
-        }
+/* top bar */
+#topnav{ height:50px; background:rgba(1,5,8,0.98); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:3000; backdrop-filter:blur(4px);}
+.logo{ display:flex; align-items:center; gap:8px; cursor:pointer;}
+.logo svg{ animation:spin 18s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.lname{ font-family:'Orbitron',monospace; font-weight:900; font-size:0.9rem; letter-spacing:3px; color:var(--g); text-shadow:var(--glow-g);}
+.lsub{ font-family:'Share Tech Mono',monospace; font-size:0.45rem; letter-spacing:1.5px; color:var(--textd);}
+.viewnav{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+.vnbtn{ background:transparent; border:1px solid var(--border); font-family:'Share Tech Mono',monospace; font-size:0.55rem; letter-spacing:1.8px; padding:5px 12px; border-radius:2px; color:var(--textd); cursor:pointer; transition:0.15s; white-space:nowrap;}
+.vnbtn.active, .vnbtn.active-r, .vnbtn.active-b, .vnbtn.active-p{ border-color:var(--g); color:var(--g); background:var(--g2); box-shadow:var(--glow-g);}
+.vnbtn.active-r{ border-color:var(--r); color:var(--r); background:var(--r2); box-shadow:var(--glow-r);}
+.vnbtn.active-b{ border-color:var(--b); color:var(--b); background:var(--b2);}
+.vnbtn.active-p{ border-color:var(--p); color:var(--p); background:var(--p2);}
+.navright{ display:flex; gap:8px; align-items:center;}
+#clock{ font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:var(--textd);}
+.live-pill{ border:1px solid var(--r); background:var(--r3); padding:3px 8px; border-radius:2px; display:flex; gap:5px; font-size:0.55rem; color:var(--r);}
+.live-dot{ width:6px; height:6px; background:var(--r); border-radius:50%; animation:pulse 1s infinite;}
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.25;}}
+.chat-toggle-btn{ background:var(--p3); border:1px solid var(--p); padding:4px 12px; border-radius:2px; color:var(--p); font-family:'Share Tech Mono',monospace; font-size:0.55rem; cursor:pointer; letter-spacing:1px;}
 
-        /* custom scroll */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #0f1722; }
-        ::-webkit-scrollbar-thumb { background: #2dd4bf; border-radius: 4px; }
+/* views */
+#views{ flex:1; position:relative; overflow:hidden; }
+.view{ position:absolute; inset:0; display:none; flex-direction:column; overflow:hidden; }
+.view.active{ display:flex; }
 
-        /* main layout */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+/* dashboard layout */
+.dash-body{ flex:1; display:flex; overflow:hidden; min-height:0; }
+.dash-left{ width:280px; flex-shrink:0; border-right:1px solid var(--border); overflow-y:auto; background:var(--panel); scrollbar-width:thin; }
+.dash-center{ flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; min-width:0; }
+.dash-right{ width:270px; flex-shrink:0; border-left:1px solid var(--border); overflow-y:auto; background:var(--panel); scrollbar-width:thin; }
 
-        /* top navbar */
-        .top-bar {
-            background: #03070fcc;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid #1e2a3a;
-            padding: 0 20px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: radial-gradient(circle, #2dd4bf, #0f766e);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 20px;
-            box-shadow: 0 0 8px #2dd4bf80;
-        }
-        .title {
-            font-weight: 700;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #ccfbf1, #2dd4bf);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .tabs {
-            display: flex;
-            gap: 6px;
-            background: #0b1018;
-            padding: 4px 6px;
-            border-radius: 32px;
-        }
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 28px;
-            font-weight: 500;
-            font-size: 13px;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .tab-btn.active {
-            background: #1e293b;
-            color: #2dd4bf;
-            box-shadow: 0 0 4px #2dd4bf40;
-        }
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            background: #0f1722;
-            padding: 5px 12px;
-            border-radius: 24px;
-            border-left: 3px solid #2dd4bf;
-        }
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            box-shadow: 0 0 6px #2dd4bf;
-            animation: pulse 1.2s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+/* widgets */
+.wg{ border-bottom:1px solid rgba(255,255,255,0.04); }
+.wh{ display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--border); position:relative; }
+.wh::before{ content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--g),transparent); opacity:0.3; }
+.wh.r::before{ background:linear-gradient(90deg,transparent,var(--r),transparent);}
+.wt{ font-family:'Orbitron',monospace; font-size:0.5rem; font-weight:700; letter-spacing:2px; color:var(--g);}
+.wt.r{ color:var(--r); } .wt.b{ color:var(--b); } .wt.p{ color:var(--p); } .wt.a{ color:var(--a);}
+.wb{ font-family:'Share Tech Mono',monospace; font-size:0.5rem; padding:2px 6px; border-radius:2px; }
+.wbg{ background:var(--g2); color:var(--g); border:1px solid rgba(0,240,144,0.2);}
+.wbr{ background:var(--r2); color:var(--r); border:1px solid rgba(255,58,42,0.2);}
+.wbp{ background:var(--p2); color:var(--p); border:1px solid rgba(200,80,255,0.2);}
+.kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:7px; }
+.kc{ background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:3px; padding:8px; position:relative; overflow:hidden; }
+.kc::after{ content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--g); opacity:0.2;}
+.kv{ font-family:'Orbitron',monospace; font-size:1.1rem; font-weight:900; line-height:1; color:var(--g);}
+.kv.r{ color:var(--r); } .kv.b{ color:var(--b); } .kv.p{ color:var(--p);}
+.kl{ font-size:0.54rem; letter-spacing:1px; color:var(--textd);}
+.news-item{ display:flex; gap:8px; padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:0.1s; animation:fadeIn 0.3s;}
+.news-item:hover{ background:rgba(0,240,144,0.04);}
+.badge{ font-family:'Share Tech Mono',monospace; font-size:0.45rem; padding:2px 5px; border-radius:2px; min-width:36px; text-align:center;}
+.badge-aj{ background:rgba(0,204,255,0.1); color:var(--b); border:1px solid rgba(0,204,255,0.3);}
+.badge-bbc{ background:rgba(0,240,144,0.08); color:var(--g); border:1px solid rgba(0,240,144,0.2);}
+.badge-reu{ background:rgba(245,166,35,0.08); color:var(--a); border:1px solid rgba(245,166,35,0.2);}
+.act-table{ width:100%; border-collapse:collapse; font-family:'Share Tech Mono',monospace; font-size:0.52rem; }
+.act-table th{ text-align:left; padding:4px 6px; color:var(--textd); border-bottom:1px solid var(--border);}
+.act-table td{ padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.025);}
+.map-toolbar{ height:30px; background:rgba(1,5,8,0.96); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:5px; padding:0 8px; overflow-x:auto; }
+.mb{ background:transparent; border:1px solid var(--border); font-family:'Share Tech Mono',monospace; font-size:0.5rem; padding:2px 8px; border-radius:2px; cursor:pointer; color:var(--textd); white-space:nowrap;}
+.mb.on{ border-color:var(--g); color:var(--g); background:var(--g3);}
+.mb.on-r{ border-color:var(--r); color:var(--r); background:var(--r3);}
+#map1, #map2{ flex:1; background:#010508; z-index:1;}
+.leaflet-container{ background:#010508; }
+.hud-card{ background:rgba(2,6,12,0.88); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:3px; padding:6px 9px; font-family:'Share Tech Mono',monospace; font-size:0.5rem; pointer-events:auto;}
+.hud-ttl{ letter-spacing:2px; font-size:0.45rem; margin-bottom:3px; display:block;}
+.intercept-pop{ position:absolute; top:40px; left:50%; transform:translateX(-50%); background:rgba(255,58,42,0.15); border:1px solid var(--r); backdrop-filter:blur(12px); padding:6px 12px; border-radius:3px; font-size:0.6rem; z-index:500; display:none; white-space:nowrap;}
 
-        /* main content */
-        .main-view {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-        .tab-pane {
-            display: none;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            padding: 18px 20px;
-            gap: 20px;
-        }
-        .tab-pane.active-pane {
-            display: flex;
-            flex-direction: column;
-        }
+/* chatbot */
+#chatbot{ position:fixed; bottom:16px; right:16px; width:360px; background:var(--panel); border:1px solid var(--p); border-radius:6px; display:none; flex-direction:column; z-index:6000; max-height:80vh; overflow:hidden; backdrop-filter:blur(12px);}
+#chatbot.open{ display:flex;}
+.cb-header{ display:flex; align-items:center; gap:8px; padding:10px 12px; background:rgba(30,5,50,0.6); border-bottom:1px solid rgba(200,80,255,0.2);}
+.cb-msgs{ flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; max-height:400px;}
+.msg{ font-size:0.7rem; line-height:1.4; max-width:90%;}
+.msg-user{ align-self:flex-end; background:rgba(200,80,255,0.12); border:1px solid rgba(200,80,255,0.3); border-radius:8px 8px 2px 8px; padding:6px 10px;}
+.msg-ai{ align-self:flex-start; background:rgba(0,240,144,0.05); border:1px solid rgba(0,240,144,0.2); border-radius:8px 8px 8px 2px; padding:6px 10px;}
+.cb-input{ display:flex; gap:6px; padding:8px; border-top:1px solid rgba(200,80,255,0.2);}
+#cb-input{ flex:1; background:rgba(200,80,255,0.08); border:1px solid rgba(200,80,255,0.3); border-radius:3px; padding:6px 10px; color:var(--textb); font-family:'Share Tech Mono',monospace; resize:none; font-size:0.65rem;}
+#chat-fab{ position:fixed; bottom:16px; right:16px; width:48px; height:48px; border-radius:50%; background:var(--p2); border:1px solid var(--p); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5999; font-size:1.3rem; box-shadow:0 0 14px rgba(200,80,255,0.5);}
+@keyframes fadeIn{ from{opacity:0; transform:translateX(-4px);} to{opacity:1;}}
 
-        /* card grid */
-        .grid-dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-        .card {
-            background: #0c1220cc;
-            backdrop-filter: blur(4px);
-            border: 1px solid #1e2f3f;
-            border-radius: 20px;
-            padding: 18px;
-            transition: 0.2s;
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            border-bottom: 1px dashed #2d3e54;
-            padding-bottom: 8px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .gauge-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        canvas.gauge-canvas {
-            width: 100%;
-            max-width: 200px;
-        }
-        
-        @media (max-width: 768px) {
-            canvas.gauge-canvas {
-                max-width: 150px;
-            }
-            canvas#marketCanvas {
-                max-width: 100%;
-                height: 80px !important;
-            }
-            canvas#geoMarketLine {
-                max-width: 100%;
-                height: 80px !important;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            canvas.gauge-canvas {
-                max-width: 120px;
-            }
-            canvas#marketCanvas {
-                height: 60px !important;
-            }
-            canvas#geoMarketLine {
-                height: 60px !important;
-            }
-        }
-        .incident-list {
-            max-height: 260px;
-            overflow-y: auto;
-            font-size: 13px;
-        }
-        .incident-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #1e2a3a;
-            display: flex;
-            gap: 8px;
-            align-items: flex-start;
-        }
-        .tag {
-            background: #2d3e54;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #b9e6ff;
-        }
-        .critical-tag { background: #b91c1c40; color: #fca5a5; border-left: 2px solid #ef4444; }
-        .map-container {
-            height: 340px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #2d3e54;
-            position: relative;
-        }
-        .map-container-3d {
-            height: 500px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #2d3e54;
-            position: relative;
-        }
-        /* Map Controls */
-        .map-control-panel {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #0c1220dd;
-            backdrop-filter: blur(8px);
-            border: 1px solid #2d3e54;
-            border-radius: 12px;
-            padding: 8px;
-            display: flex;
-            gap: 6px;
-            flex-direction: column;
-            z-index: 1000;
-        }
-        .map-control-btn {
-            width: 36px;
-            height: 36px;
-            background: #1e2a3a;
-            border: 1px solid #2d3e54;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #2dd4bf;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        .map-control-btn:hover {
-            background: #2d3e54;
-            color: #10b981;
-            box-shadow: 0 0 8px #2dd4bf40;
-        }
-        .map-control-btn.active {
-            background: #2dd4bf20;
-            border-color: #2dd4bf;
-        }
-        .map-legend {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            background: #0c1220dd;
-            backdrop-filter: blur(8px);
-            border: 1px solid #2d3e54;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 11px;
-            max-width: 180px;
-            z-index: 999;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 4px 0;
-        }
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .heatmap-simple {
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 12px;
-        }
-        .heat-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 6px 0;
-            font-size: 12px;
-        }
-        .bar-cell {
-            background: #10b981;
-            height: 24px;
-            border-radius: 6px;
-            transition: width 0.3s;
-        }
-
-        /* ========== RESPONSIVE DESIGN ========== */
-        @media (max-width: 1200px) {
-            .grid-dashboard { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-            .top-bar { padding: 0 16px; }
-            .tab-pane { padding: 14px 16px; }
-        }
-
-        @media (max-width: 900px) {
-            .grid-dashboard { grid-template-columns: 1fr; }
-            .card { padding: 14px; }
-            .map-container-3d { height: 400px !important; }
-            .top-bar { height: 50px; padding: 0 12px; }
-            .logo-area { gap: 8px; }
-            .logo-icon { width: 28px; height: 28px; font-size: 18px; }
-            .title { font-size: 1rem !important; }
-            .tabs { gap: 4px; padding: 3px 4px; }
-            .tab-btn { padding: 5px 12px; font-size: 12px; }
-            .status-badge { font-size: 11px; padding: 4px 10px; }
-            .card-header { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-            .map-control-panel { top: 8px; right: 8px; padding: 6px; gap: 4px; }
-            .map-control-btn { width: 32px; height: 32px; font-size: 14px; }
-            .map-legend { bottom: 8px; left: 8px; font-size: 10px; max-width: 160px; }
-        }
-
-        @media (max-width: 768px) {
-            body { overflow-y: auto; }
-            .app-container { height: auto; }
-            .main-view { flex: 1; }
-            .top-bar { 
-                flex-wrap: wrap; 
-                height: auto; 
-                padding: 10px 12px; 
-                flex-direction: column; 
-                gap: 8px;
-            }
-            .logo-area { width: 100%; }
-            .tabs { width: 100%; justify-content: space-around; }
-            .tab-btn { flex: 1; padding: 6px 8px; font-size: 11px; }
-            .tab-pane { padding: 10px; gap: 12px; }
-            .grid-dashboard { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
-            .card { padding: 10px; border-radius: 12px; }
-            .card-header { font-size: 12px; padding-bottom: 6px; margin-bottom: 8px; }
-            .map-container-3d { height: 300px !important; }
-            .incident-list { max-height: 200px; }
-            .incident-item { padding: 6px 0; font-size: 12px; }
-            .tag { font-size: 9px; padding: 1px 6px; }
-            .map-control-panel { top: 6px; right: 6px; padding: 4px; gap: 3px; }
-            .map-control-btn { width: 28px; height: 28px; font-size: 12px; }
-            .map-legend { bottom: 6px; left: 6px; font-size: 9px; max-width: 140px; padding: 8px; }
-            .legend-item { margin: 2px 0; gap: 4px; }
-            .legend-color { width: 12px; height: 12px; }
-        }
-
-        @media (max-width: 480px) {
-            .title { font-size: 0.9rem !important; display: none; }
-            .logo-icon { width: 24px; height: 24px; font-size: 16px; }
-            .tabs { gap: 2px; padding: 2px 3px; }
-            .tab-btn { padding: 4px 6px; font-size: 10px; }
-            .status-badge { font-size: 9px; padding: 3px 8px; display: none; }
-            .top-bar { gap: 6px; }
-            .logo-area { gap: 4px; }
-            .tab-pane { padding: 8px; gap: 10px; }
-            .grid-dashboard { gap: 10px; margin-bottom: 10px; }
-            .card { padding: 8px; border-radius: 10px; }
-            .card-header { font-size: 11px; margin-bottom: 6px; }
-            .map-container-3d { height: 250px !important; }
-            .incident-item { padding: 4px 0; font-size: 11px; }
-            .map-control-panel { top: 4px; right: 4px; padding: 3px; gap: 2px; }
-            .map-control-btn { width: 24px; height: 24px; font-size: 10px; }
-            .map-legend { bottom: 4px; left: 4px; font-size: 8px; max-width: 120px; padding: 6px; }
-        }
-
-        /* ========== MOBILE-FRIENDLY ADJUSTMENTS ========== */
-        @supports (aspect-ratio: 1) {
-            .gauge-canvas { width: 100% !important; height: auto !important; }
-        }
-
-        /* Ensure map stays visible */
-        .map-container-3d { width: 100%; }
-        #securityMap { width: 100%; height: inherit; }
-        #adsbFeed { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-        #dataSourcesList { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-
-        /* Responsive grid column spans */
-        @media (max-width: 1200px) {
-            .card[style*="grid-column: span 2"] { grid-column: span 1 !important; }
-        }
-        
-        @media (max-width: 900px) {
-            .card[style*="grid-column: span 2"] { grid-column: span 1 !important; }
-        }
-
-        .leaflet-control-zoom { border: none; background: #0a0f1c; }
-        .leaflet-container { background: #03060c; }
-    
-    </style>
+/* responsive */
+@media(max-width:880px){ .dash-right{ display:none; } }
+</style>
 </head>
 <body>
-<div class="app-container">
-    <div class="top-bar">
-        <div class="logo-area">
-            <div class="logo-icon">🛡️</div>
-            <div class="title" style="font-size: 1.3rem;">AEGIS · INTEL CORE</div>
-            <div style="font-size: 11px; background: #0a0f1c; padding: 4px 8px; border-radius: 40px;">BALOCHISTAN G~EYE</div>
-        </div>
-        <div class="tabs" id="tabContainer">
-            <button class="tab-btn active" data-tab="geo">🗺️ SITUATION MAP</button>
-            <button class="tab-btn" data-tab="analytics">📊 ANALYTICS & GAUGES</button>
-            <button class="tab-btn" data-tab="incidents">⚠️ INCIDENCE GRID</button>
-            <button class="tab-btn" data-tab="heat">🔥 TRAFFIC HEATMAP</button>
-            <button class="tab-btn" data-tab="adsb">✈️ ADS-B TRACKING</button>
-            <button class="tab-btn" data-tab="sources">📡 DATA SOURCES</button>
-        </div>
-        <div class="status-badge"><span class="live-dot"></span> LIVE OSINT · WEBSOCKET READY</div>
-    </div>
 
-    <div class="main-view">
-        <!-- GEO TAB (Map + intelligence layers) -->
-        <div class="tab-pane active-pane" id="geoPane">
-            <div class="grid-dashboard">
-                <div class="card" style="grid-column: span 2;">
-                    <div class="card-header"><span>📡 GEOSPATIAL INTELLIGENCE — BALOCHISTAN SECURITY OVERLAY</span><span class="tag">ESR + 3D VIEW</span></div>
-                    <div id="securityMap" class="map-container-3d" style="height: 500px; position: relative;">
-                        <!-- Map Controls -->
-                        <div class="map-control-panel">
-                            <button class="map-control-btn" id="mapLayerBtn" title="Satellite View" onclick="toggleMapLayer()">🛰️</button>
-                            <button class="map-control-btn" id="mapTerrainBtn" title="Terrain View" onclick="toggleTerrain()">⛰️</button>
-                            <button class="map-control-btn" id="map3DBtn" title="3D View" onclick="toggle3DView()">🎯</button>
-                            <button class="map-control-btn" id="mapHeatBtn" title="Heat Intensity" onclick="toggleHeatLayer()">🔥</button>
-                            <button class="map-control-btn" id="mapResetBtn" title="Reset View" onclick="resetMapView()">🔄</button>
-                        </div>
-                        <!-- Map Legend -->
-                        <div class="map-legend">
-                            <div style="font-weight:600; margin-bottom:8px; color:#2dd4bf;">📍 THREAT LEGEND</div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background:#ef4444;"></div>
-                                <span>Critical Attack</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background:#f97316;"></div>
-                                <span>High Threat</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background:#facc15;"></div>
-                                <span>Medium Alert</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background:#3b82f6;"></div>
-                                <span>Military Ops</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background:#06b6d4;"></div>
-                                <span>Monitoring Zone</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px;">
-                        <span>🔴 IED / ATTACK</span> <span>🟠 BLA ACTIVITY</span> <span>🟡 TLP PROTEST</span> <span>🔵 SSG OPS</span> <span>⚫ PIPELINE SABOTAGE</span> <span>🔵 ESR ZONES</span>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><span>⚡ REAL-TIME ALERTS (WebSocket Simulation)</span><span class="tag">critical</span></div>
-                    <div id="alertFeed" style="height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px;">
-                        <div class="incident-item"><span>🔔</span> <span>Connected to AEGIS signaling channel ...</span></div>
-                    </div>
-                    <div class="card-header" style="margin-top: 12px;"><span>📡 SIGNAL MONITOR · PREDICTION</span></div>
-                    <div id="marketLine" style="height: 120px; position: relative;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ANALYTICS TAB (Gauges + Devices) -->
-        <div class="tab-pane" id="analyticsPane">
-            <div class="grid-dashboard">
-                <div class="card"><div class="card-header"><span>🚦 INFRASTRUCTURE INTEGRITY</span></div><div class="gauge-wrapper"><canvas id="gaugePort" width="180" height="120" style="width:180px; height:120px;"></canvas><div>GWADAR PORT OPS</div></div></div>
-                <div class="card"><div class="card-header"><span>📡 GPS JAMMING INTENSITY</span></div><div class="gauge-wrapper"><canvas id="gaugeGPS" width="180" height="120"></canvas><div>JAMMING PROBABILITY</div></div></div>
-                <div class="card"><div class="card-header"><span>📰 MEDIA AUTHENTICITY SCORE</span></div><div class="gauge-wrapper"><canvas id="gaugeMedia" width="180" height="120"></canvas><div>SOURCE CREDIBILITY</div></div></div>
-                <div class="card"><div class="card-header"><span>🔍 ADS-B COVERAGE RELIABILITY</span></div><div class="gauge-wrapper"><canvas id="gaugeADSB" width="180" height="120"></canvas><div>OPEN SKY INTEGRITY</div></div></div>
-                <div class="card" style="grid-column: span 2;"><div class="card-header"><span>📈 COMMODITY & ENERGY MARKETS (Brent/WTI)</span></div><div><canvas id="marketCanvas" height="100" style="width:100%; height:120px;"></canvas></div></div>
-                <div class="card"><div class="card-header"><span>🛡️ DEVICE HEALTH / SSG READINESS</span></div><div id="deviceHealth" style="font-size:13px;"></div></div>
-            </div>
-        </div>
-
-        <!-- INCIDENTS GRID (structured from provided JSON) -->
-        <div class="tab-pane" id="incidentsPane">
-            <div class="grid-dashboard">
-                <div class="card" style="grid-column: span 2;">
-                    <div class="card-header"><span>📋 BORDER SECURITY INCIDENTS · BALOCHISTAN PROVINCE</span><span class="tag">multi-source verification</span></div>
-                    <div id="incidentGrid" class="incident-list" style="max-height: 600px;"></div>
-                </div>
-                <div class="card">
-                    <div class="card-header"><span>🏷️ TAG CLOUD & THREAT KEYWORDS</span></div>
-                    <div id="tagCloud" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- HEATMAP TRAFFIC TAB -->
-        <div class="tab-pane" id="heatPane">
-            <div class="grid-dashboard">
-                <div class="card"><div class="card-header"><span>🌡️ TRAFFIC HEATMAP (Region / Time)</span><span class="tag">react-heatmap-grid styled</span></div>
-                    <div class="heatmap-simple" id="customHeatmap"></div>
-                    <div style="margin-top: 15px; font-size: 12px; color: #94a3b8;">x-axis: time slots | y-axis: regions A/B/C | value = incident density</div>
-                </div>
-                <div class="card"><div class="card-header"><span>🚦 CPEC ROUTE TRAFFIC LOAD</span><span class="tag">real-time simulation</span></div>
-                    <div id="liveTrafficBar" style="margin-top: 20px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADS-B AIRCRAFT TRACKING TAB -->
-        <div class="tab-pane" id="adsbPane">
-            <div class="grid-dashboard">
-                <div class="card" style="grid-column: span 2;">
-                    <div class="card-header"><span>✈️ ACTIVE AIRCRAFT TRACKING — ADS-B REAL-TIME FEED</span><span class="tag">live-adsb</span></div>
-                    <div id="adsbFeed" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:12px; max-height:600px; overflow-y:auto;"></div>
-                </div>
-            </div>
-            <div class="grid-dashboard">
-                <div class="card"><div class="card-header"><span>🛰️ ADS-B COVERAGE ZONES</span><span class="tag">airspace-monitoring</span></div>
-                    <div style="font-size:11px; color:#94a3b8;">
-                        <div style="margin:8px 0; padding:8px; background:#10b98120; border-radius:6px; border-left:3px solid #10b981;">
-                            <strong style="color:#86efac;">🟢 Primary Coverage</strong><br/>
-                            Quetta International, PAF Base Quetta (80km radius)
-                        </div>
-                        <div style="margin:8px 0; padding:8px; background:#3b82f820; border-radius:6px; border-left:3px solid #3b82f8;">
-                            <strong style="color:#93c5fd;">🔵 Secondary Coverage</strong><br/>
-                            Gwadar Coastal (100km), Taftan Border (60km)
-                        </div>
-                        <div style="margin:8px 0; padding:8px; background:#f9731620; border-radius:6px; border-left:3px solid #f97316;">
-                            <strong style="color:#fed7aa;">🟠 Tertiary Coverage</strong><br/>
-                            Dera Bugti FOB (70km), Balochistan Regional
-                        </div>
-                    </div>
-                </div>
-                <div class="card"><div class="card-header"><span>📊 AIRSPACE STATISTICS</span><span class="tag">monitoring</span></div>
-                    <div style="font-size:12px;">
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>Active Aircraft:</span>
-                            <span style="color:#2dd4bf; font-weight:600;" id="adsbCount">5</span>
-                        </div>
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>Military Ops:</span>
-                            <span style="color:#3b82f8; font-weight:600;">3</span>
-                        </div>
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>UAV Missions:</span>
-                            <span style="color:#f97316; font-weight:600;">1</span>
-                        </div>
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>Coverage Zones:</span>
-                            <span style="color:#10b981; font-weight:600;">4</span>
-                        </div>
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>Avg. Altitude:</span>
-                            <span style="color:#f97316; font-weight:600;">1720 ft</span>
-                        </div>
-                        <div style="margin:8px 0; display:flex; justify-content:space-between;">
-                            <span>Max Speed:</span>
-                            <span style="color:#10b981; font-weight:600;">450 kt</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- DATA SOURCES TAB (Live Feed Integration) -->
-        <div class="tab-pane" id="sourcesPane">
-            <div class="grid-dashboard">
-                <div class="card" style="grid-column: span 2;">
-                    <div class="card-header"><span>🔗 ACTIVE DATA SOURCES · REAL-TIME INTEGRATION</span><span class="tag">field-testing</span></div>
-                    <div id="dataSourcesList" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; max-height:500px; overflow-y:auto;"></div>
-                </div>
-            </div>
-            <div class="grid-dashboard">
-                <div class="card"><div class="card-header"><span>📡 ISPR OFFICIAL FEEDS</span><span class="tag">government</span></div><div id="isprFeed" style="font-size:12px; max-height:300px; overflow-y:auto;"></div></div>
-                <div class="card"><div class="card-header"><span>🐦 TWITTER/X LOCAL JOURNALISTS</span><span class="tag">social-media</span></div><div id="twitterFeed" style="font-size:12px; max-height:300px; overflow-y:auto;"></div></div>
-                <div class="card"><div class="card-header"><span>🛰️ SATELLITE & GEO MONITORING</span><span class="tag">osint</span></div><div id="geoFeed" style="font-size:12px; max-height:300px; overflow-y:auto;"></div></div>
-                <div class="card"><div class="card-header"><span>🏥 HUMANITARIAN / NGO REPORTS</span><span class="tag">humanitarian</span></div><div id="ngoFeed" style="font-size:12px; max-height:300px; overflow-y:auto;"></div></div>
-            </div>
-        </div>
-    </div>
+<div id="topnav">
+  <div class="logo" onclick="showView('landing')">
+    <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" stroke="#00f090" stroke-width="0.7" stroke-dasharray="3 2"/><circle cx="14" cy="14" r="6" stroke="#00f090" stroke-width="0.4" opacity="0.4"/><circle cx="14" cy="14" r="2" fill="#00f090"/><line x1="14" y1="2" x2="14" y2="26" stroke="#00f090" stroke-width="0.3" opacity="0.3"/><line x1="2" y1="14" x2="26" y2="14" stroke="#00f090" stroke-width="0.3" opacity="0.3"/></svg>
+    <div><div class="lname">AEGIS</div><div class="lsub">INTELLIGENCE CORE</div></div>
+  </div>
+  <div class="viewnav">
+    <button class="vnbtn active" id="btn-landing" onclick="showView('landing')">🏠 HOME</button>
+    <button class="vnbtn" id="btn-overview" onclick="showView('overview')"><div class="live-dot" style="background:var(--g); width:5px; height:5px;"></div>OVERVIEW</button>
+    <button class="vnbtn" id="btn-airdef" onclick="showView('airdef')"><div class="live-dot" style="background:var(--r); width:5px; height:5px;"></div>AIR DEFENSE</button>
+    <button class="vnbtn" id="btn-media" onclick="showView('media')">📰 MEDIA SCRUTINY</button>
+    <button class="vnbtn" id="btn-sentiment" onclick="showView('sentiment')">📊 SENTINEL</button>
+  </div>
+  <div class="navright"><div class="live-pill"><div class="live-dot"></div>LIVE</div><div id="clock">--:--:-- UTC</div><button class="chat-toggle-btn" onclick="toggleChat()">AI ANALYST</button></div>
 </div>
 
+<div id="views">
+  <!-- LANDING (simplified but feature rich) -->
+  <div class="view active" id="view-landing" style="overflow-y:auto; padding:30px 20px; background:radial-gradient(ellipse at 30% 40%, rgba(0,80,60,0.1), transparent);">
+    <div style="max-width:1000px; margin:0 auto; text-align:center;"><div style="font-family:'Orbitron'; font-size:2.4rem; font-weight:900; background:linear-gradient(135deg,#00f090,#00ccff,#c850ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">AEGIS STRATINT</div>
+    <div style="font-family:'Share Tech Mono'; letter-spacing:2px; margin:15px 0;">REAL-TIME GEOSPATIAL INTELLIGENCE | ADS-B | AIS | GPS JAMMING | SENTINEL AI</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,auto); max-width:600px; margin:20px auto;"><div class="kc"><div class="kv" id="lp-ac">--</div><div class="kl">LIVE TRACKS</div></div><div class="kc"><div class="kv">3</div><div class="kl">GPS JAM ZONES</div></div><div class="kc"><div class="kv">8+</div><div class="kl">DATA FEEDS</div></div><div class="kc"><div class="kv">71%</div><div class="kl">ESCALATION</div></div></div>
+    <button class="mb on" style="font-size:0.7rem; padding:8px 20px;" onclick="showView('overview')">▶ ENTER COMMAND CENTER</button>
+    </div>
+  </div>
+
+  <!-- OVERVIEW DASHBOARD -->
+  <div class="view" id="view-overview">
+    <div class="dash-alert" style="height:24px; background:rgba(0,240,144,0.05); border-bottom:1px solid var(--g); display:flex; align-items:center; padding:0 12px; gap:8px;"><div class="live-dot" style="background:var(--r);"></div><span style="font-family:'Share Tech Mono'; font-size:0.55rem;">OPENSKY ACTIVE · GPS JAMMING DELTA-3 · INTERCEPT VECTOR ACTIVE</span></div>
+    <div class="dash-body">
+      <div class="dash-left">
+        <div class="wg"><div class="wh r"><div class="wt r">REAL-TIME KPIs</div><div class="wb wbr" id="ov-timestamp">--</div></div><div class="kpi-grid"><div class="kc r"><div class="kv r" id="ov-ac-count">0</div><div class="kl">AIRCRAFT</div></div><div class="kc b"><div class="kv b" id="ov-mil-count">0</div><div class="kl">MIL/UNK</div></div><div class="kc a"><div class="kv a" id="ov-escalation">71%</div><div class="kl">ESCALATION</div></div><div class="kc"><div class="kv" id="ov-emerg">0</div><div class="kl">SQUAWK</div></div></div></div>
+        <div class="wg"><div class="wh a"><div class="wt a">SENTIMENT SIGNALS</div><div class="wb wbg">LIVE</div></div><div id="sig-bars" style="padding:7px;"><div class="sbr" style="display:flex; justify-content:space-between; font-size:0.55rem;"><span>Hostility Index</span><span id="hostile-ind">68%</span></div><div style="height:3px; background:#2a2f34; margin-bottom:8px;"><div id="hostile-bar" style="width:68%; height:3px; background:var(--r);"></div></div><div class="sbr" style="display:flex; justify-content:space-between; font-size:0.55rem;"><span>Media Tension</span><span id="tension-ind">74%</span></div><div style="height:3px; background:#2a2f34; margin-bottom:8px;"><div id="tension-bar" style="width:74%; height:3px; background:var(--a);"></div></div></div></div>
+        <div class="wg"><div class="wh"><div class="wt">INTEL FEED</div><div class="wb wbg">RSS</div></div><div id="ov-news-feed" style="max-height:280px; overflow-y:auto;"></div></div>
+      </div>
+      <div class="dash-center"><div class="map-toolbar"><button class="mb on" id="toggle-air" onclick="toggleMapLayer('air')">✈ ADS-B</button><button class="mb" id="toggle-ship" onclick="toggleMapLayer('maritime')">⛵ AIS</button><button class="mb" id="toggle-gps" onclick="toggleMapLayer('gps')">📡 GPS ZONES</button><button class="mb on-r" id="toggle-threat" onclick="toggleMapLayer('threat')">⚠ THREATS</button><button class="mb" id="toggle-inter" onclick="toggleMapLayer('intercept')">🎯 INTERCEPT</button><div style="margin-left:auto; font-size:0.5rem;" id="map-coord">—</div></div><div id="map1" style="flex:1;"></div><div class="hud-card" style="position:absolute; bottom:10px; left:10px; z-index:400;"><span class="hud-ttl" style="color:var(--g)">GPS INTEGRITY</span><div>JAMMING: 2 ACTIVE | SPOOFING: 1 DETECT</div></div></div>
+      <div class="dash-right"><div class="wg"><div class="wh r"><div class="wt r">ADS-B TRACKS</div><div class="wb wbr" id="ac-badge">FETCHING</div></div><div style="max-height:260px; overflow-y:auto;"><table class="act-table" id="aircraft-table"><thead><tr><th>CALLSIGN</th><th>ALT</th><th>SQK</th></tr></thead><tbody id="ac-table-body"><tr><td colspan="3">Loading OpenSky...</td></tr></tbody></table></div></div><div class="wg"><div class="wh p"><div class="wt p">GPS JAM ZONES</div><div class="wb wbp">GNSS</div></div><div id="gps-zones-list" style="padding:7px;"></div></div><div class="wg"><div class="wh a"><div class="wt a">PREDICTION MKTS</div><div class="wb wba">POLY</div></div><div style="padding:8px; font-size:0.55rem;">⚡ Escalation prob: 71%<br/>✈ Air incursion: 63%<br/>📡 GPS disruption: 82%</div></div></div>
+    </div>
+  </div>
+
+  <!-- AIR DEFENSE simplified but functional -->
+  <div class="view" id="view-airdef"><div class="dash-alert" style="background:var(--r3);"><span style="color:var(--r);">⚠ INTERCEPT WARNING: UNKN-01 RESTRICTED ZONE R-401</span></div><div class="dash-body"><div class="dash-left"><div class="wg"><div class="wh r"><div class="wt r">THREAT MATRIX</div></div><div id="threat-list" style="padding:8px;"><div class="tm-item critical" style="padding:6px; border-left:3px solid var(--r); margin:5px 0;">🔴 UNKN-01 · ETA 4min · CRITICAL</div><div class="tm-item high" style="border-left:3px solid var(--a);">🟠 UNKN-02 · ETA 9min · HIGH</div></div></div><div class="wg"><div class="wh"><div class="wt">INTERCEPT LOG</div></div><div id="intercept-log" style="padding:7px; font-size:0.55rem;">[11:23:41] UNKN-01 vector computed<br/>[11:17:02] CAP zone Bravo activated</div></div></div><div class="dash-center"><div class="map-toolbar"><button class="mb on-r">✈ THREATS</button><button class="mb on-a">🎯 INTERCEPT VECTORS</button></div><div id="map2" style="flex:1;"></div><div class="hud-card" style="position:absolute; top:40px; right:10px;"><span class="hud-ttl" style="color:var(--r)">THREAT STATUS</span><div>CRITICAL: 1 | HIGH: 2 | MED: 1</div></div></div><div class="dash-right"><div class="wg"><div class="wh r"><div class="wt r">PHYSICS VALIDATION</div></div><div style="padding:8px;">Speed consistency: 94%<br/>Alt profile: 88%<br/>ADS-B vs GPS: 67%</div></div></div></div></div>
+
+  <!-- MEDIA SCRUTINY -->
+  <div class="view" id="view-media"><div class="dash-body"><div class="dash-left"><div class="wg"><div class="wh b"><div class="wt b">AUTHENTICITY SCORE</div></div><div style="padding:12px; text-align:center;"><div style="font-size:2rem; font-weight:900; color:var(--g);" id="auth-percent">87%</div><div class="kl">MEDIA INTEGRITY INDEX</div></div></div><div class="wg"><div class="wh b"><div class="wt b">VERIFICATION CHECKLIST</div></div><div id="media-checklist" style="padding:7px;"></div></div></div><div class="dash-center" style="overflow-y:auto;"><div style="padding:12px;"><div class="wt b" style="margin-bottom:8px;">LIVE MEDIA FEED | CREDIBILITY SCORING</div><div id="media-feed-articles" style="display:flex; flex-direction:column; gap:8px;"></div></div></div><div class="dash-right"><div class="wg"><div class="wh b"><div class="wt b">DOMAIN WHOIS</div></div><div style="padding:8px;"><input id="whois-domain" placeholder="domain.com" style="width:100%; background:#0a121c; border:1px solid var(--border-b); padding:5px; color:#fff;"><button onclick="mockWhois()" class="mb" style="margin-top:5px;">CHECK</button><div id="whois-result" style="margin-top:8px; font-size:0.55rem;">Enter domain for WHOIS simulation</div></div></div></div></div></div>
+
+  <!-- SENTIMENT INTEL -->
+  <div class="view" id="view-sentiment"><div class="dash-body"><div class="dash-left"><div class="wg"><div class="wh p"><div class="wt p">SENTIMENT OVERVIEW</div></div><div class="kpi-grid"><div class="kc r"><div class="kv r" id="sent-hostile">--</div><div class="kl">HOSTILITY</div></div><div class="kc a"><div class="kv a" id="sent-tension">--</div><div class="kl">TENSION</div></div></div></div><div class="wg"><div class="wh p"><div class="wt p">DECISION MATRIX</div></div><div id="decision-matrix" style="padding:7px;"></div></div></div><div class="dash-center" style="overflow-y:auto; padding:12px;"><div class="wt p">NARRATIVE ANALYSIS · AI SYNTHESIS</div><div id="narrative-text" style="margin-top:10px; font-size:0.7rem; line-height:1.5;"></div></div><div class="dash-right"><div class="wg"><div class="wh"><div class="wt">PER-SOURCE SCORES</div></div><div id="src-sent-list" style="padding:7px;"></div></div></div></div></div>
+</div>
+
+<div id="chatbot"><div class="cb-header"><div class="live-dot"></div><span class="wt p" style="font-size:0.7rem;">AEGIS AI ANALYST</span><span style="margin-left:auto; cursor:pointer;" onclick="toggleChat()">✕</span></div><div class="cb-msgs" id="chat-messages"><div class="msg msg-ai">Online. I have live ADS-B, GPS jamming, and RSS sentiment. Ask about threats, media credibility, or air situation.</div></div><div class="cb-input"><textarea id="cb-input" rows="1" placeholder="Ask about threats, GPS zones, sentiment..."></textarea><button onclick="sendChatMessage()" class="mb on-p">SEND</button></div></div>
+<div id="chat-fab" onclick="toggleChat()">🤖</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-<script src="https://unpkg.com/leaflet-fullscreen@3.0.0/Control.FullScreen.js"></script>
-<style>
-    @keyframes pulse-anim {
-        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
-    .pulse-marker {
-        animation: pulse-anim 1.5s infinite;
-    }
-</style>
 <script>
-    // ---------- BALOCHISTAN ENHANCED DATASET (Multi-source Intelligence, May 2026) ----------
-    // Data Sources: ISPR_official | Twitter/X local_journalists | AEGIS_OSINT | SIGNAL_MONITOR | UN_OCHA | NGO_reports
-    const geoIncidents = [
-        { id: "QUETTA", lat: 30.1798, lng: 66.9750, name: "Quetta", tags: ["IED_attack","urban_strike","TLP_activity","SSG_ops","civilian_casualty"], severity: "critical", notes: "IED blast near Serena Hotel (May 24, 2026); 8 casualties | SSG urban counter-terrorism exercise | Balochistan_gov updates" },
-        { id: "GWADAR", lat: 25.1216, lng: 62.3254, name: "Gwadar", tags: ["strike_action","roadblock","port_disruption","SSG_ops","CPEC_infrastructure"], severity: "high", notes: "Strike near CPEC port complex (May 22) | Naval counter-terror drills ongoing | Infrastructure_monitoring alert | CPEC supply chain disrupted" },
-        { id: "TAFTAN", lat: 28.9631, lng: 61.5550, name: "Taftan", tags: ["border_clash","smuggling","border_control","transnational_trafficking","SSG_training"], severity: "high", notes: "Border skirmish reported (May 19) | Smuggling networks detected | SSG border control exercise | Cross-border arms interdiction" },
-        { id: "KHUZDAR", lat: 27.8110, lng: 66.6100, name: "Khuzdar", tags: ["roadside_bomb","insurgency_activity","IED_attack","police_casualties"], severity: "critical", notes: "Roadside bomb targets police convoy (May 16, 2026) | 6 law_enforcement casualties | BLA_activity suspected | Area cordoned off" },
-        { id: "TURBAT", lat: 26.0023, lng: 63.0500, name: "Turbat", tags: ["BLA_activity","insurgency","armed_confrontation","tribal_tensions"], severity: "high", notes: "BLA armed group movement (May 18) | ISPR patrols intensified | Tribal_leaders engaged in mediation | Humanitarian_access restricted" },
-        { id: "DERA_BUGTI", lat: 29.0360, lng: 69.1585, name: "Dera Bugti", tags: ["pipeline_sabotage","energy_infrastructure","sabotage","resource_conflict"], severity: "critical", notes: "Balochistan Pipeline sabotage (May 20, 2026) | Gas supply disrupted 72hrs | Economic impact: $2.3M | Militant_claim | Emergency repairs ongoing" },
-        { id: "QUETTA_CANTONMENT", lat: 30.2100, lng: 66.9600, name: "Quetta Cantonment", tags: ["SSG_ops","military_exercise","counter_insurgency_training"], severity: "medium", notes: "SSG urban warfare simulation (May 21-23) | Building clearance drills | Civil defense coordination | Training_exercise announced by ISPR_official" },
-        { id: "MASTUNG", lat: 29.7910, lng: 67.7450, name: "Mastung", tags: ["armed_clash","tribal_conflict","casualty_incident"], severity: "high", notes: "Armed clash between rival groups (May 17) | 4 dead, 12 wounded | Humanitarian_crisis emerging | Healthcare_access urgent" },
-        { id: "SIBI", lat: 29.5517, lng: 67.8970, name: "Sibi", tags: ["protest_call","political_unrest","transportation_strike"], severity: "medium", notes: "Political demonstration (May 21) | Transportation strike called | Local_grievances: employment, services | Social_tension rising" },
-        { id: "KALAT", lat: 29.0175, lng: 66.6060, name: "Kalat", tags: ["militia_recruitment","political_organizing","youth_mobilization"], severity: "medium", notes: "Recruitment activity detected (May 19) | Youth outreach ongoing | Political_messaging via local_media | Community_leaders monitoring" }
-    ];
+// ======================= GLOBAL STATE =======================
+let mapView = null, mapAir = null;
+let aircraftMarkers = new Map(), shipMarkers = new Map();
+let liveAircraft = [];
+let liveNewsItems = [];
+let activeMap = null;
+let mapLayers = { air: null, maritime: null, gps: null, threat: null, intercept: null };
+let radarInterval = null;
 
-    // ---------- ADS-B AIRCRAFT TRACKING DATA (Real-time Flight Intelligence) ----------
-    const aircraftTracks = [
-        { 
-            id: "PAK-001", callsign: "PAK-AIR-1", type: "C-130J", category: "military", 
-            lat: 30.2100, lng: 66.9800, altitude: 3500, speed: 450, heading: 180, 
-            origin: "Quetta", destination: "Islamabad", operator: "PAF", status: "en-route",
-            timestamp: new Date(), airspace: "R-401"
-        },
-        { 
-            id: "PAK-002", callsign: "SERENA-2", type: "AH-1F", category: "military", 
-            lat: 30.15, lng: 66.95, altitude: 1200, speed: 280, heading: 270, 
-            origin: "Quetta Cant.", destination: "Patrol", operator: "SSG-Ops", status: "en-route",
-            timestamp: new Date(), airspace: "R-401"
-        },
-        { 
-            id: "PAK-003", callsign: "AEC-DRONE", type: "CH-4", category: "uav", 
-            lat: 29.0360, lng: 69.1585, altitude: 2800, speed: 120, heading: 90, 
-            origin: "Dera Bugti FOB", destination: "Surveillance", operator: "AEC", status: "surveillance",
-            timestamp: new Date(), airspace: "Ops-Zone-1"
-        },
-        { 
-            id: "PAK-004", callsign: "BORDER-PATROL", type: "Huey-UH1", category: "military", 
-            lat: 28.9631, lng: 61.5550, altitude: 800, speed: 180, heading: 45, 
-            origin: "Taftan Base", destination: "Border Patrol", operator: "FC", status: "patrol",
-            timestamp: new Date(), airspace: "Border-Zone"
-        },
-        { 
-            id: "PAK-005", callsign: "GWADAR-NAVAL", type: "AW-101", category: "military", 
-            lat: 25.1216, lng: 62.3254, altitude: 600, speed: 200, heading: 225, 
-            origin: "Gwadar Port", destination: "Port Patrol", operator: "Navy", status: "patrol",
-            timestamp: new Date(), airspace: "Naval-Zone"
-        }
-    ];
+// ======================= INIT MAPS =======================
+function initOverviewMap() {
+  if(mapView) return;
+  mapView = L.map('map1').setView([30.5, 53.5], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'CartoDB' }).addTo(mapView);
+  mapView.on('mousemove', e => document.getElementById('map-coord').innerHTML = e.latlng.lat.toFixed(2)+'° '+e.latlng.lng.toFixed(2)+'°');
+  mapLayers.air = L.layerGroup().addTo(mapView);
+  mapLayers.maritime = L.layerGroup().addTo(mapView);
+  mapLayers.gps = L.layerGroup().addTo(mapView);
+  mapLayers.threat = L.layerGroup().addTo(mapView);
+  mapLayers.intercept = L.layerGroup().addTo(mapView);
+  addGPSZones(mapLayers.gps);
+  addThreatPolygons(mapLayers.threat);
+  addInterceptLines(mapLayers.intercept);
+  addMaritimeShips(mapLayers.maritime);
+}
+function initAirDefenseMap() {
+  if(mapAir) return;
+  mapAir = L.map('map2').setView([30.5, 53.5], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapAir);
+  L.layerGroup().addTo(mapAir); // threats layer
+  addThreatPolygons(L.layerGroup().addTo(mapAir));
+  addInterceptLines(L.layerGroup().addTo(mapAir));
+}
+function addGPSZones(layer) {
+  const zones = [[[36,50],[36,54],[33,54],[33,50]], [[27.5,54.5],[27.5,57.5],[25.5,57.5],[25.5,54.5]]];
+  zones.forEach(z => layer.addLayer(L.polygon(z, { color: '#ff3c2e', weight: 1.2, fillOpacity: 0.08, dashArray: '5 5' })));
+}
+function addThreatPolygons(layer) { layer.addLayer(L.polygon([[35,48],[35,56],[31,56],[31,48]], {color:'#ff3c2e', weight:1, fillOpacity:0.05, dashArray:'6 4'})); }
+function addInterceptLines(layer) { layer.addLayer(L.polyline([[35.2,51.4],[32.5,53.5]], {color:'#ff3c2e', weight:1.2, dashArray:'8 6'})); }
+function addMaritimeShips(layer) { const ships = [[27.5,55.8],[26.8,56.5],[25.8,56.8]]; ships.forEach(pos => { let m = L.marker(pos, {icon: L.divIcon({html:'⛵', iconSize:[10,10], className:''})}); layer.addLayer(m);}); }
 
-    // ---------- ADS-B COVERAGE ZONES ----------
-    const adsCoverageZones = [
-        { 
-            name: "Quetta Primary ADS-B Coverage", 
-            lat: 30.1798, lng: 66.9750, radius: 80000, 
-            coverage: "primary", airports: ["Quetta International", "PAF Base Quetta"]
-        },
-        { 
-            name: "Gwadar Coastal Coverage", 
-            lat: 25.1216, lng: 62.3254, radius: 100000, 
-            coverage: "secondary", airports: ["Gwadar International", "Naval Base"]
-        },
-        { 
-            name: "Taftan Border Coverage", 
-            lat: 28.9631, lng: 61.5550, radius: 60000, 
-            coverage: "secondary", airports: ["Taftan Airstrip"]
-        },
-        { 
-            name: "Dera Bugti Regional Coverage", 
-            lat: 29.0360, lng: 69.1585, radius: 70000, 
-            coverage: "tertiary", airports: ["Field Operations Base"]
-        }
-    ];
+// ======================= OPENSKY FETCH =======================
+async function fetchOpenSky() {
+  try {
+    const res = await fetch('https://opensky-network.org/api/states/all?lamin=22&lomin=44&lamax=42&lomax=65', { signal: AbortSignal.timeout(10000) });
+    if(!res.ok) throw new Error();
+    const data = await res.json();
+    const states = (data.states || []).filter(s => s[5] && s[6]);
+    liveAircraft = states.slice(0, 60);
+    document.getElementById('ov-ac-count').innerText = liveAircraft.length;
+    const milCount = liveAircraft.filter(a => (a[1] || '').includes('IRI') || (a[2] || '') === 'Iran').length;
+    document.getElementById('ov-mil-count').innerText = milCount;
+    document.getElementById('lp-ac').innerText = liveAircraft.length;
+    const emrg = liveAircraft.filter(a => a[14] === '7700').length;
+    document.getElementById('ov-emerg').innerText = emrg;
+    updateAircraftMarkers();
+    updateAircraftTable();
+    document.getElementById('ac-badge').innerText = liveAircraft.length+' LIVE';
+    document.getElementById('ov-timestamp').innerText = new Date().toISOString().slice(11,19);
+  } catch(e) { console.warn(e); }
+}
+function updateAircraftMarkers() {
+  if(!mapView || !mapLayers.air) return;
+  mapLayers.air.clearLayers();
+  liveAircraft.forEach(ac => {
+    const lat = ac[6], lng = ac[5];
+    if(!lat || !lng) return;
+    const callsign = (ac[1] || ac[0] || 'UNKN').toString().trim();
+    const color = ac[14]==='7700' ? '#ff3c2e' : '#00f090';
+    const icon = L.divIcon({ html: `<div style="transform:rotate(${ac[10]||0}deg); width:14px; height:14px;"><svg viewBox="0 0 14 14"><polygon points="7,1 13,12 7,9 1,12" fill="${color}" opacity="0.9"/></svg></div><div style="font-size:6px; color:white; background:#000000aa; padding:0 2px;">${callsign.slice(0,6)}</div>`, iconSize: [14,14], className: '' });
+    mapLayers.air.addLayer(L.marker([lat, lng], { icon }));
+  });
+}
+function updateAircraftTable() {
+  const tbody = document.getElementById('ac-table-body');
+  if(!tbody) return;
+  tbody.innerHTML = liveAircraft.slice(0,15).map(ac => `<tr><td>${(ac[1]||ac[0]||'---').slice(0,8)}</td><td>${ac[7]?Math.round(ac[7]*3.28084)+'ft':'-'}</td><td style="color:${ac[14]==='7700'?'red':'#aaccdd'}">${ac[14]||'----'}</td></tr>`).join('');
+}
 
-    // ---------- ADS EXCHANGE INTEGRATION - EXTERNAL FLIGHT TRACKING DATA ----------
-    const adsExchangeConfig = {
-        enabled: true,
-        updateInterval: 5000,
-        apiEndpoint: "https://api.adsexchange.com/aircraft", // Mock endpoint
-        region: "Balochistan",
-        trackingTypes: ["commercial", "military", "freight", "medical"]
-    };
+// ======================= RSS & SENTIMENT ENGINE =======================
+const RSS_FEEDS = ['https://api.rss2json.com/v1/api.json?rss_url=https://www.aljazeera.com/xml/rss/all.xml','https://api.rss2json.com/v1/api.json?rss_url=http://feeds.bbci.co.uk/news/world/middle_east/rss.xml','https://api.rss2json.com/v1/api.json?rss_url=https://feeds.reuters.com/reuters/topNews'];
+async function fetchAllRSS() {
+  let items = [];
+  for(let url of RSS_FEEDS) {
+    try {
+      let resp = await fetch(url, { signal: AbortSignal.timeout(7000) });
+      let json = await resp.json();
+      if(json.items) items.push(...json.items.map(i => ({ title: i.title, link: i.link, source: url.includes('aljazeera')?'AlJazeera':url.includes('bbc')?'BBC':'Reuters', pubDate: i.pubDate })));
+    } catch(e) {}
+  }
+  liveNewsItems = items.slice(0, 25);
+  renderNewsFeed();
+  runSentimentAnalysis();
+}
+function renderNewsFeed() {
+  const container = document.getElementById('ov-news-feed');
+  if(container) container.innerHTML = liveNewsItems.slice(0,12).map(n => `<div class="news-item" onclick="window.open('${n.link}','_blank')"><div class="badge badge-${n.source==='AlJazeera'?'aj':n.source==='BBC'?'bbc':'reu'}">${n.source}</div><div style="flex:1; font-size:0.7rem;">${n.title.substring(0,70)}</div></div>`).join('');
+  const mediaFeed = document.getElementById('media-feed-articles');
+  if(mediaFeed) mediaFeed.innerHTML = liveNewsItems.slice(0,10).map(n => `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:6px;"><span style="color:var(--b);">${n.source}</span> <span style="font-size:0.65rem;">${n.title.substring(0,90)}</span><div style="font-size:0.5rem; color:var(--textd);">${new Date(n.pubDate).toLocaleTimeString()}</div></div>`).join('');
+}
+function runSentimentAnalysis() {
+  let hostile = 0, tense = 0;
+  let keywords = ['attack','missile','strike','war','emergency','jamming','spoofing','intercept'];
+  liveNewsItems.forEach(item => {
+    let txt = (item.title || '').toLowerCase();
+    keywords.forEach(k => { if(txt.includes(k)) hostile+=1; });
+    if(txt.includes('tension') || txt.includes('crisis')) tense+=2;
+  });
+  let hostileScore = Math.min(98, 40 + Math.floor(hostile/2));
+  let tensionScore = Math.min(94, 45 + Math.floor(tense/1.5));
+  document.getElementById('hostile-ind').innerText = hostileScore+'%';
+  document.getElementById('tension-ind').innerText = tensionScore+'%';
+  document.getElementById('hostile-bar').style.width = hostileScore+'%';
+  document.getElementById('tension-bar').style.width = tensionScore+'%';
+  document.getElementById('sent-hostile') && (document.getElementById('sent-hostile').innerText = hostileScore+'%');
+  document.getElementById('sent-tension') && (document.getElementById('sent-tension').innerText = tensionScore+'%');
+  const decisionDiv = document.getElementById('decision-matrix');
+  if(decisionDiv) decisionDiv.innerHTML = `<div style="border-left:3px solid var(--r); padding:6px;">HIGH: Airspace intrusion alert, immediate CAP coordination (confidence 89%)</div><div style="border-left:3px solid var(--a); margin-top:8px;">MEDIUM: GPS spoofing in Hormuz, reroute advisory (conf 67%)</div>`;
+  const narrative = document.getElementById('narrative-text');
+  if(narrative) narrative.innerHTML = `Cross-domain analysis shows elevated hostility (${hostileScore}%) with key narratives focusing on airspace violations. GPS jamming events correlate with increased military rhetoric. Recommended: elevate alert level to ORANGE.`;
+}
+function mockWhois() { document.getElementById('whois-result').innerHTML = '🔍 Whois simulation: Domain registered 2014, owner not public. Credibility score: 76%'; }
 
-    let externalAircraft = [
-        { 
-            id: "EXT-001", icao: "3A5B2C", callsign: "FIA-911", type: "Airbus A320", category: "commercial", 
-            lat: 30.5500, lng: 67.1200, altitude: 7500, speed: 350, heading: 165, 
-            origin: "Karachi", destination: "Quetta", operator: "FIA Airways", status: "en-route",
-            source: "adsexchange", squawk: "2456", lastUpdate: new Date()
-        },
-        { 
-            id: "EXT-002", icao: "2B4A1F", callsign: "CARE-40", type: "Twin Otter", category: "medical", 
-            lat: 29.8350, lng: 66.8900, altitude: 2400, speed: 110, heading: 270, 
-            origin: "Quetta", destination: "Remote Base", operator: "MSF", status: "en-route",
-            source: "adsexchange", squawk: "1200", lastUpdate: new Date()
-        },
-        { 
-            id: "EXT-003", icao: "4C3D2E", callsign: "CARGO-7", type: "Cessna 208", category: "freight", 
-            lat: 28.5100, lng: 65.9800, altitude: 4200, speed: 140, heading: 90, 
-            origin: "Islamabad", destination: "Gwadar", operator: "Express Cargo", status: "en-route",
-            source: "adsexchange", squawk: "3721", lastUpdate: new Date()
-        },
-        { 
-            id: "EXT-004", icao: "5D4E3F", callsign: "PAK-EXEC", type: "Hawker 800", category: "commercial", 
-            lat: 31.2300, lng: 67.4500, altitude: 25000, speed: 400, heading: 180, 
-            origin: "Islamabad", destination: "Lahore", operator: "Executive Air", status: "cruise",
-            source: "adsexchange", squawk: "4312", lastUpdate: new Date()
-        }
-    ];
+// ======================= AI CHATBOT =======================
+function toggleChat() { document.getElementById('chatbot').classList.toggle('open'); }
+function sendChatMessage() {
+  let input = document.getElementById('cb-input');
+  let msg = input.value.trim();
+  if(!msg) return;
+  let chatDiv = document.getElementById('chat-messages');
+  chatDiv.innerHTML += `<div class="msg msg-user">${msg}</div>`;
+  input.value = '';
+  setTimeout(() => {
+    let reply = `AEGIS analysis: current air tracks: ${liveAircraft.length} active, GPS jamming zones 2 active, hostility index high. ${msg.includes('threat')?'UNKN-01 intercept vector calculated.':msg.includes('media')?'Media authenticity score 87% based on cross-referencing.':'Recommend monitor restricted airspace.'}`;
+    chatDiv.innerHTML += `<div class="msg msg-ai">${reply}</div>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+  }, 300);
+}
+window.quickAsk = (q) => { document.getElementById('cb-input').value = q; sendChatMessage(); };
 
-    // ---------- ENHANCED DATA SOURCES & INTEGRATION REFERENCES ----------
-    const dataSources = {
-        government: ["ISPR_official", "military_ops", "gov_response", "Balochistan_gov", "policy_changes", "law_enforcement", "incident_reports"],
-        media: ["local_journalists", "community_alerts", "regional_news", "district_updates", "community_groups", "grassroots_reports", "border_activity"],
-        osint: ["AEGIS_OSINT_surveillance", "geo_monitoring", "SIGNAL_MONITOR_rtosint", "prediction_markets", "satellite_imagery", "geo_imagery", "infrastructure_monitoring"],
-        humanitarian: ["UN_OCHA_reports", "humanitarian_access", "displacement", "NGO_healthcare", "healthcare_access", "education_gap"],
-        adsexchange: ["ADS Exchange API", "Commercial Traffic", "Medical Flights", "Cargo Operations", "Executive Aviation"],
-        threats: ["BLA_activity", "TLP_activity", "IED_attack", "border_clash", "protest_call", "strike_action", "roadblock", "smuggling", "armed_clash", "militia_recruitment"]
-    };
-
-    // ---------- EXPANDED THREAT KEYWORDS & INDICATORS ----------
-    const threatKeywords = {
-        incidents: ["IED_attack", "roadside_bomb", "pipeline_sabotage", "border_clash", "armed_clash", "strike_action", "roadblock", "protest_call", "casualty_incident", "urban_strike", "port_disruption", "transnational_trafficking"],
-        groups: ["BLA_activity", "TLP_activity", "insurgency_activity", "insurgency", "militia_recruitment", "armed_group", "militant_claim", "tribal_conflict"],
-        infrastructure: ["CPEC_infrastructure", "port_disruption", "energy_infrastructure", "resource_conflict", "transportation_strike", "police_casualties", "military_exercise"],
-        socialPolitical: ["protest_call", "political_unrest", "tribal_tensions", "community_alerts", "political_organizing", "youth_mobilization", "political_messaging", "humanitarian_crisis"],
-        monitoring: ["geo_monitoring", "airspace_alerts", "border_control", "law_enforcement", "counter_insurgency", "counter_terrorism", "emergency_response", "Area_cordoned"]
-    };
-
-    // ---------- LIVE DATA SOURCES FOR FIELD TESTING ----------
-    const liveDataSources = {
-        government: [
-            { name: "ISPR Press Releases", status: "online", url: "https://ispr.gov.pk/press-releases", frequency: "real-time", lastUpdate: new Date(), icon: "🇵🇰", categories: ["military_ops", "gov_response", "incident_reports"] },
-            { name: "Balochistan Gov Portal", status: "online", url: "https://balochistan.gov.pk", frequency: "hourly", lastUpdate: new Date(), icon: "🏛️", categories: ["policy_changes", "disaster_response"] },
-            { name: "Law Enforcement Alerts", status: "online", url: "https://mobileprint.pk/police", frequency: "real-time", lastUpdate: new Date(), icon: "🚔", categories: ["incident_reports", "border_control"] },
-            { name: "National Security Division (NSD)", status: "online", url: "https://nsd.gov.pk/updates", frequency: "real-time", lastUpdate: new Date(), icon: "🛡️", categories: ["national_security", "threat_assessment"] },
-            { name: "FIA Counter-Terror Unit", status: "online", url: "https://fia.gov.pk/ctu", frequency: "hourly", lastUpdate: new Date(), icon: "🔍", categories: ["counter_terrorism", "law_enforcement"] }
-        ],
-        nationalMedia: [
-            { name: "Dawn News - National", status: "online", url: "https://dawnews.tv/live", frequency: "real-time", lastUpdate: new Date(), icon: "📺", categories: ["national_news", "breaking_news", "security_updates"] },
-            { name: "Dawn.com - Breaking", status: "online", url: "https://dawn.com/latest", frequency: "real-time", lastUpdate: new Date(), icon: "📰", categories: ["national_updates", "investigation"] },
-            { name: "Geo News - Pakistan", status: "online", url: "https://geonews.tv", frequency: "real-time", lastUpdate: new Date(), icon: "📺", categories: ["national_broadcast", "incident_coverage"] },
-            { name: "ARY News - 24/7", status: "online", url: "https://arynews.tv", frequency: "real-time", lastUpdate: new Date(), icon: "📺", categories: ["continuous_coverage", "live_reporting"] },
-            { name: "24/7 News - Live", status: "online", url: "https://24sevenews.pk", frequency: "real-time", lastUpdate: new Date(), icon: "⏰", categories: ["live_updates", "real_time"] },
-            { name: "Express News", status: "online", url: "https://expressnews.pk", frequency: "real-time", lastUpdate: new Date(), icon: "📡", categories: ["news_updates", "regional_focus"] }
-        ],
-        regionalMedia: [
-            { name: "Balochistan TV (Provincial)", status: "online", url: "https://balochistandtv.pk/live", frequency: "real-time", lastUpdate: new Date(), icon: "📺", categories: ["provincial_news", "regional_updates"] },
-            { name: "Quetta News Network", status: "online", url: "https://quettanews.pk", frequency: "hourly", lastUpdate: new Date(), icon: "🏙️", categories: ["city_updates", "incident_reports"] },
-            { name: "Balochistan Tribune", status: "online", url: "https://balochistantribune.com", frequency: "hourly", lastUpdate: new Date(), icon: "📄", categories: ["investigative_journalism", "analysis"] },
-            { name: "Radio Balochistan", status: "online", url: "https://radiobalochistan.pk/stream", frequency: "real-time", lastUpdate: new Date(), icon: "📻", categories: ["community_news", "grassroots_reports"] },
-            { name: "Tribal Council Updates", status: "online", url: "https://tribal-network.pk/updates", frequency: "daily", lastUpdate: new Date(), icon: "👥", categories: ["tribal_news", "community_matters"] }
-        ],
-        media: [
-            { name: "Twitter/X - @IslamabadInsght", status: "online", url: "https://twitter.com/IslamabadInsght", frequency: "real-time", lastUpdate: new Date(), icon: "🐦", categories: ["local_journalists", "community_alerts"] },
-            { name: "Twitter/X - @BalochiNews", status: "online", url: "https://twitter.com/BalochiNews", frequency: "real-time", lastUpdate: new Date(), icon: "🐦", categories: ["regional_news", "grassroots_reports"] },
-            { name: "Twitter/X - @DawnNewsUrdu", status: "online", url: "https://twitter.com/DawnNewsUrdu", frequency: "real-time", lastUpdate: new Date(), icon: "🐦", categories: ["national_updates", "urdu_reporting"] },
-            { name: "Twitter/X - @GeoNews", status: "online", url: "https://twitter.com/GeoNews", frequency: "real-time", lastUpdate: new Date(), icon: "🐦", categories: ["breaking_news", "live_updates"] },
-            { name: "Facebook - Balochistan Updates", status: "online", url: "https://facebook.com/balochistan.updates", frequency: "hourly", lastUpdate: new Date(), icon: "📘", categories: ["community_groups", "district_updates"] },
-            { name: "WhatsApp Groups - Border Watch", status: "online", url: "internal", frequency: "real-time", lastUpdate: new Date(), icon: "💬", categories: ["grassroots_reports", "border_activity"] },
-            { name: "Telegram - @BalochistanAlert", status: "online", url: "https://t.me/BalochistanAlert", frequency: "real-time", lastUpdate: new Date(), icon: "✈️", categories: ["instant_alerts", "breaking_news"] }
-        ],
-        osint: [
-            { name: "AEGIS OSINT Surveillance", status: "online", url: "https://aegis-osint.local/api", frequency: "real-time", lastUpdate: new Date(), icon: "🛰️", categories: ["geo_monitoring", "airspace_alerts"] },
-            { name: "SIGNAL MONITOR - Real-time OSINT", status: "online", url: "https://signal-monitor.io/api", frequency: "real-time", lastUpdate: new Date(), icon: "📊", categories: ["prediction_markets", "risk_assessment"] },
-            { name: "Satellite Imagery (Maxar)", status: "online", url: "https://maxar.com/api/imagery", frequency: "daily", lastUpdate: new Date(), icon: "🛰️", categories: ["geo_imagery", "infrastructure_monitoring"] },
-            { name: "OpenStreetMap Edits Monitor", status: "online", url: "https://osm.org/api", frequency: "hourly", lastUpdate: new Date(), icon: "🗺️", categories: ["geo_monitoring", "infrastructure_changes"] }
-        ],
-        humanitarian: [
-            { name: "UN OCHA ReliefWeb", status: "online", url: "https://reliefweb.int/api", frequency: "daily", lastUpdate: new Date(), icon: "🏥", categories: ["humanitarian_access", "displacement"] },
-            { name: "Doctors Without Borders - MSF", status: "online", url: "https://msf.org/en/situation/pakistan", frequency: "daily", lastUpdate: new Date(), icon: "⚕️", categories: ["healthcare_access", "casualty_reports"] },
-            { name: "NGO Crisis Reports", status: "online", url: "https://ngo-crisis-db.org/api", frequency: "hourly", lastUpdate: new Date(), icon: "🏨", categories: ["education_gap", "displacement", "humanitarian_crisis"] },
-            { name: "Pakistani Red Crescent", status: "online", url: "https://prc.org.pk/emergency", frequency: "real-time", lastUpdate: new Date(), icon: "🩸", categories: ["emergency_response", "disaster_relief"] }
-        ]
-    };
-
-    // heatmap data (xLabels, yLabels, matrix)
-    const xLabels = ["00:00","06:00","12:00","18:00"];
-    const yLabels = ["Region A (North)","Region B (Central)","Region C (Coastal)"];
-    const heatData = [
-        [12, 45, 67, 23],
-        [34, 56, 78, 90],
-        [23, 45, 12, 67]
-    ];
-
-    // WebSocket simulation + real-time threat intelligence feed
-    let wsSimInterval;
-    let marketChart;
-    // mock commodity data
-    let brentPrices = [108, 112, 115, 110];
-    let wtiPrices = [104, 107, 109, 105];
-    const labels = ["Mon","Tue","Wed","Thu"];
-
-    // ---------- REAL-TIME THREAT INTELLIGENCE FEED (RTI) ----------
-    // Integrated from: AEGIS_OSINT, SIGNAL_MONITOR, ISPR, local_journalists, satellite_imagery
-    const realtimeThreatAlerts = [
-        { severity: "critical", timestamp: "2026-05-24T14:32Z", message: "🔴 IED EXPLOSION: Quetta Serena Hotel area — 8+ casualties confirmed | ISPR responding | Humanitarian_access requested by UN_OCHA", source: ["ISPR_official", "local_journalists", "geo_monitoring"], tags: ["IED_attack","urban_strike","civilian_casualty"] },
-        { severity: "critical", timestamp: "2026-05-24T11:18Z", message: "🔴 DERA BUGTI PIPELINE ATTACK: Balochistan main gas line sabotaged — 72hr supply disruption | Economic loss $2.3M | BLA_activity suspected", source: ["ISPR_official", "gov_response", "infrastructure_monitoring"], tags: ["pipeline_sabotage","energy_infrastructure","militant_claim"] },
-        { severity: "critical", timestamp: "2026-05-23T18:45Z", message: "🔴 KHUZDAR ROADSIDE BOMB: Police convoy targeted — 6 law_enforcement casualties | Militants escape | Counter_insurgency ops launched", source: ["law_enforcement", "ISPR_official"], tags: ["IED_attack","police_casualties","roadside_bomb"] },
-        { severity: "high", timestamp: "2026-05-22T09:27Z", message: "🟠 GWADAR STRIKE: Port workers demonstration escalates — Roadblock established | CPEC operations halted | Naval patrols increased", source: ["community_alerts", "local_journalists", "CPEC_monitoring"], tags: ["strike_action","port_disruption","CPEC_infrastructure"] },
-        { severity: "high", timestamp: "2026-05-21T16:53Z", message: "🟠 MASTUNG ARMED CLASH: Tribal conflict erupts — 4 dead, 12 wounded | Humanitarian crisis emerging | Healthcare_access urgent", source: ["grassroots_reports", "NGO_healthcare"], tags: ["armed_clash","tribal_conflict","casualty_incident"] },
-        { severity: "high", timestamp: "2026-05-21T12:15Z", message: "🟠 TURBAT BLA ACTIVITY: Armed group movement detected — ISPR patrols intensified | Tribal_leaders engaged | Airspace_alerts issued", source: ["geo_monitoring", "ISPR_official"], tags: ["BLA_activity","insurgency","military_response"] },
-        { severity: "high", timestamp: "2026-05-20T19:42Z", message: "🟠 TAFTAN BORDER CLASH: Smuggling networks intercepted — 3 suspects detained | Border_control tightened | Cross-border_trafficking documented", source: ["border_control", "law_enforcement"], tags: ["border_clash","smuggling","transnational_trafficking"] },
-        { severity: "medium", timestamp: "2026-05-21T10:05Z", message: "🟡 QUETTA CANTONMENT: SSG urban counter-terror exercise ongoing — Building clearance drills | Civil defense coordination | Training_exercise announced by ISPR", source: ["ISPR_official", "military_ops"], tags: ["counter_insurgency","military_exercise","SSG_ops"] },
-        { severity: "medium", timestamp: "2026-05-21T08:33Z", message: "🟡 SIBI POLITICAL DEMONSTRATION: Labor protest organized — Transportation strike called | Local_grievances: employment, services | Social_tension rising", source: ["community_alerts", "social_media", "local_journalists"], tags: ["protest_call","political_unrest","strike_action"] },
-        { severity: "medium", timestamp: "2026-05-19T15:22Z", message: "🟡 KALAT MILITIA RECRUITMENT: Youth outreach campaign detected — Political_messaging via local_media | Community_leaders monitoring | Education_gap exploitation concern", source: ["grassroots_reports", "youth_mobilization"], tags: ["militia_recruitment","political_organizing","youth_engagement"] },
-        { severity: "info", timestamp: "2026-05-24T13:00Z", message: "🔵 SIGNAL MONITOR UPDATE: Conflict probability escalation index +4.2% | Risk forecast: 73% | Prediction_markets reflecting security concerns", source: ["SIGNAL_MONITOR_rtosint", "prediction_markets"], tags: ["risk_assessment","osint_analysis"] },
-        { severity: "info", timestamp: "2026-05-24T12:00Z", message: "🔵 SATELLITE IMAGERY ALERT: New IED caches detected near Khuzdar region — Infrastructure_monitoring flagged | Geo_imagery analysis pending", source: ["satellite_imagery", "geo_monitoring"], tags: ["threat_detection","infrastructure_monitoring"] }
-    ];
-
-    // WebSocket simulation (mock alerts)
-    let alertIndex = 0;
-    function startWebSocketSim() {
-        const alertDiv = document.getElementById("alertFeed");
-        let cycleIndex = 0;
-        setInterval(() => {
-            const alert = realtimeThreatAlerts[cycleIndex % realtimeThreatAlerts.length];
-            const newMsg = document.createElement("div");
-            newMsg.className = "incident-item";
-            const severityColor = alert.severity === "critical" ? '#f87171' : (alert.severity === "high" ? '#fbbf24' : '#93c5fd');
-            const icon = alert.severity === "critical" ? "🔴" : (alert.severity === "high" ? "🟠" : "🟡");
-            newMsg.innerHTML = `
-                <span>${icon}</span> 
-                <div style="flex:1;">
-                    <div style="color:${severityColor}; font-weight:600;">${alert.message}</div>
-                    <div style="font-size:10px; color:#6c86a3; margin-top:4px;">
-                        📡 ${alert.source.join(' | ')} • ${alert.timestamp}
-                    </div>
-                </div>
-            `;
-            alertDiv.prepend(newMsg);
-            if(alertDiv.children.length > 10) alertDiv.removeChild(alertDiv.lastChild);
-            cycleIndex++;
-        }, 9000);
-    }
-
-    // ---------- HEATMAP RENDERING ----------
-    function renderHeatmap() {
-        const container = document.getElementById("customHeatmap");
-        if(!container) return;
-        let html = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px;"><thead><tr><th></th>${xLabels.map(x => `<th style="padding:8px; text-align:center;">${x}</th>`).join('')}</tr></thead><tbody>`;
-        for(let i=0; i<yLabels.length; i++) {
-            html += `<tr><td style="padding:8px; font-weight:600;">${yLabels[i]}</td>`;
-            for(let j=0; j<heatData[i].length; j++) {
-                let val = heatData[i][j];
-                let intensity = Math.min(100, val);
-                let bg = `rgba(45, 212, 191, ${0.2 + intensity/100 * 0.7})`;
-                html += `<td style="background:${bg}; text-align:center; padding:12px; border-radius:8px; font-weight:bold;">${val}</td>`;
-            }
-            html += `</tr>`;
-        }
-        html += `</tbody></table></div>`;
-        container.innerHTML = html;
-    }
-
-    // ---------- GAUGE DRAWING FUNCTIONS ----------
-    function drawGauge(canvasId, percent, color) {
-        const canvas = document.getElementById(canvasId);
-        if(!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width, h = canvas.height;
-        ctx.clearRect(0,0,w,h);
-        const cx = w/2, cy = h-15, radius = w/2-10;
-        let startAngle = -0.7 * Math.PI;
-        let endAngle = 0.7 * Math.PI;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, startAngle, endAngle);
-        ctx.strokeStyle = "#2d3e54";
-        ctx.lineWidth = 12;
-        ctx.stroke();
-        let angle = startAngle + (percent * (endAngle - startAngle));
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, startAngle, angle);
-        ctx.strokeStyle = color || "#2dd4bf";
-        ctx.lineWidth = 12;
-        ctx.stroke();
-        ctx.fillStyle = "#e2edf7";
-        ctx.font = "bold 18px 'JetBrains Mono'";
-        ctx.fillText(Math.round(percent*100)+"%", cx-25, cy-10);
-    }
-
-    function updateGauges() {
-        drawGauge("gaugePort", 0.68, "#2dd4bf");
-        drawGauge("gaugeGPS", 0.73, "#f97316");
-        drawGauge("gaugeMedia", 0.81, "#10b981");
-        drawGauge("gaugeADSB", 0.64, "#38bdf8");
-    }
-
-    // ---------- INCIDENT GRID RENDERER WITH ENHANCED TAGS ----------
-    function renderIncidentGrid() {
-        const container = document.getElementById("incidentGrid");
-        if(!container) return;
-        container.innerHTML = geoIncidents.map(inc => `
-            <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                <div style="display:flex; gap:10px; width:100%; justify-content:space-between;">
-                    <strong>📍 ${inc.name}</strong>
-                    <span class="tag ${inc.severity === 'critical' ? 'critical-tag' : ''}">${inc.severity.toUpperCase()}</span>
-                </div>
-                <div style="font-size:12px; margin:5px 0;">${inc.notes}</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">${inc.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
-                <div style="font-size:10px; color:#6c86a3;">lat:${inc.lat} lon:${inc.lng} | sources: ISPR, local_journalists, geo_monitoring</div>
-            </div>
-        `).join('');
-        
-        // tag cloud with expanded threat keywords
-        const allTags = geoIncidents.flatMap(i => i.tags);
-        const freq = {};
-        allTags.forEach(t => freq[t] = (freq[t]||0)+1);
-        const tagCloudDiv = document.getElementById("tagCloud");
-        if(tagCloudDiv) {
-            tagCloudDiv.innerHTML = Object.entries(freq).slice(0,20).map(([tag,count]) => `<span class="tag" style="font-size:${Math.min(18,12+count*2)}px; background:#1e2a3a; cursor:pointer;" title="${tag}: ${count} incidents">${tag} (${count})</span>`).join('');
-        }
-    }
-
-    // ---------- LIVE DATA SOURCES RENDERER ----------
-    function renderDataSources() {
-        // Render data sources list
-        const listContainer = document.getElementById("dataSourcesList");
-        if(listContainer) {
-            let html = '';
-            for(const [category, sources] of Object.entries(liveDataSources)) {
-                sources.forEach(src => {
-                    const statusColor = src.status === 'online' ? '#10b981' : '#f97316';
-                    html += `
-                        <div class="card" style="background:#0c1220aa; padding:12px; border-radius:12px; border-left:3px solid ${statusColor};">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <span style="font-weight:600;">${src.icon} ${src.name}</span>
-                                <span style="font-size:10px; background:${statusColor}20; padding:2px 6px; border-radius:12px; color:${statusColor};">${src.status.toUpperCase()}</span>
-                            </div>
-                            <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">
-                                📡 ${src.frequency} | Updated: ${src.lastUpdate.toLocaleTimeString()}
-                            </div>
-                            <div style="font-size:10px; display:flex; gap:4px; flex-wrap:wrap;">
-                                ${src.categories.map(cat => `<span class="tag" style="font-size:9px;">#${cat}</span>`).join('')}
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            listContainer.innerHTML = html;
-        }
-        
-        // Render ISPR feed
-        const isprContainer = document.getElementById("isprFeed");
-        if(isprContainer) {
-            const isprFeeds = [
-                { time: "14:32", msg: "🔴 SECURITY ALERT: IED incident Quetta — response teams deployed", type: "critical" },
-                { time: "13:18", msg: "🟠 Operational Update: SSG counter-terror exercise continues | 12 suspects detained", type: "high" },
-                { time: "11:45", msg: "🟡 Border Report: Taftan crossing — routine operations | smuggling interdiction ongoing", type: "medium" },
-                { time: "09:22", msg: "🔵 Media Release: ISPR condemns infrastructure sabotage in Dera Bugti", type: "info" }
-            ];
-            isprContainer.innerHTML = isprFeeds.map(f => `
-                <div class="incident-item">
-                    <span style="color:#2dd4bf; font-weight:600; min-width:50px;">${f.time}</span>
-                    <span>${f.msg}</span>
-                </div>
-            `).join('');
-        }
-        
-        // Render National Media feeds
-        const nationalMediaContainer = document.getElementById("nationalMediaFeed") || document.createElement('div');
-        if(nationalMediaContainer && nationalMediaContainer.id) {
-            const nationalFeeds = [
-                { source: "🔴 Dawn News", msg: "BREAKING: Security operation in Balochistan — 8+ incidents reported across province | ISPR briefing scheduled", time: "14:15" },
-                { source: "🔴 Geo News", msg: "Live Coverage: Quetta incident aftermath — Hospitals overwhelmed | Political response delayed", time: "14:08" },
-                { source: "🔴 ARY News", msg: "24/7 UPDATE: National Security Division holds emergency meeting — Balochistan situation deteriorating", time: "13:55" },
-                { source: "📰 Dawn.com", msg: "ANALYSIS: Pipeline sabotage reveals supply chain vulnerabilities | Economic impact assessment", time: "13:30" }
-            ];
-            const feedHtml = nationalFeeds.map(f => `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                    <span style="color:#ef4444; font-weight:600;">${f.source}</span>
-                    <span style="font-size:11px;">${f.msg}</span>
-                    <span style="font-size:10px; color:#6c86a3;">${f.time}</span>
-                </div>
-            `).join('');
-            // Find or create the container in the DOM if rendering National feeds
-        }
-        
-        // Render Regional Updates feed
-        const regionalContainer = document.getElementById("regionalMediaFeed") || document.createElement('div');
-        if(regionalContainer && regionalContainer.id) {
-            const regionalFeeds = [
-                { source: "📺 Balochistan TV", msg: "Provincial UPDATE: Chief Minister condemns violence — relief operations in Mastung ongoing", time: "14:20" },
-                { source: "📻 Radio Balochistan", msg: "Community Alert: Tribal leaders call emergency jirga — mediation effort for conflict resolution", time: "14:05" },
-                { source: "📄 Balochistan Tribune", msg: "INVESTIGATIVE: Armed groups recruitment targeting youth | 500+ youth mobilized in last quarter", time: "13:45" },
-                { source: "👥 Tribal Council", msg: "ANNOUNCEMENT: Border crossing Taftan to remain closed for 48hrs | Security review underway", time: "13:20" }
-            ];
-            const feedHtml = regionalFeeds.map(f => `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                    <span style="color:#f97316; font-weight:600;">${f.source}</span>
-                    <span style="font-size:11px;">${f.msg}</span>
-                    <span style="font-size:10px; color:#6c86a3;">${f.time}</span>
-                </div>
-            `).join('');
-        }
-        
-        // Render Twitter/X feed
-        const twitterContainer = document.getElementById("twitterFeed");
-        if(twitterContainer) {
-            const twitterFeeds = [
-                { handle: "@IslamabadInsght", msg: "🔴 BREAKING: Multiple casualties reported in Quetta attack — humanitarian access needed #Balochistan", likes: 324 },
-                { handle: "@DawnNewsUrdu", msg: "بریکنگ: کوئٹہ میں بم دھماکہ — 8 ہلاک | صحافت کور موقع پر", likes: 512 },
-                { handle: "@GeoNews", msg: "Live: National Security briefing — Balochistan remains critical zone | Military ops intensify", likes: 289 },
-                { handle: "@BalochiNews", msg: "⚠️ THREAD: Pipeline sabotage timeline — economic impact analysis — thread 1/5 #BalochistanCrisis", likes: 187 }
-            ];
-            twitterContainer.innerHTML = twitterFeeds.map(f => `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                    <span style="color:#1da1f2; font-weight:600;">${f.handle}</span>
-                    <span style="font-size:11px;">${f.msg}</span>
-                    <span style="font-size:10px; color:#6c86a3;">❤️ ${f.likes} likes</span>
-                </div>
-            `).join('');
-        }
-        
-        // Render GEO monitoring feed
-        const geoContainer = document.getElementById("geoFeed");
-        if(geoContainer) {
-            const geoFeeds = [
-                { source: "Maxar Satellite", msg: "🛰️ Quetta region — New construction detected (IED cache suspected) — Coordinates: 30.18N, 66.97E", status: "flagged" },
-                { source: "AEGIS Geo Monitor", msg: "🗺️ Taftan border — Vehicle movement tracked (6 vehicles) — Speed: variable", status: "monitoring" },
-                { source: "OpenStreetMap", msg: "📍 Infrastructure changes detected — Pipeline route alteration near Dera Bugti", status: "flagged" },
-                { source: "ADS-B Tracker", msg: "✈️ Airspace: 28 live tracks over Balochistan — Military helicopters active near incident zones", status: "active" }
-            ];
-            geoContainer.innerHTML = geoFeeds.map(f => `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                    <span style="color:#2dd4bf; font-weight:600;">${f.source}</span>
-                    <span style="font-size:11px;">${f.msg}</span>
-                    <span class="tag" style="font-size:9px; background:${f.status==='flagged'?'#ef444440':'#10b98140'}; color:${f.status==='flagged'?'#fca5a5':'#86efac'};">${f.status.toUpperCase()}</span>
-                </div>
-            `).join('');
-        }
-        
-        // Render NGO/Humanitarian feed
-        const ngoContainer = document.getElementById("ngoFeed");
-        if(ngoContainer) {
-            const ngoFeeds = [
-                { org: "Doctors Without Borders", msg: "🏥 Quetta: 8 critical injuries admitted | blood supply critical | seeking donations", priority: "critical" },
-                { org: "UN OCHA", msg: "📊 Displacement Alert: 150+ persons displaced from Mastung area | humanitarian corridor needed", priority: "high" },
-                { org: "Local NGO Coalition", msg: "🏨 Shelter capacity: 200/500 beds occupied | Education disrupted in 3 schools", priority: "medium" },
-                { org: "Pakistani Red Crescent", msg: "🩸 Emergency Response: Ambulances dispatched to 4 incident zones | 24/7 emergency line active", priority: "critical" }
-            ];
-            ngoContainer.innerHTML = ngoFeeds.map(f => `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start;">
-                    <span style="color:#f97316; font-weight:600;">${f.org}</span>
-                    <span style="font-size:11px;">${f.msg}</span>
-                    <span class="tag" style="font-size:9px; background:${f.priority==='critical'?'#ef444440':'#facc1540'}; color:${f.priority==='critical'?'#fca5a5':'#fbbf24'};">${f.priority.toUpperCase()}</span>
-                </div>
-            `).join('');
-        }
-    }
-
-    // Market line chart (Brent/WTI)
-    function initMarketChart() {
-        const ctx = document.getElementById('marketCanvas').getContext('2d');
-        marketChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: labels, datasets: [
-                { label: 'Brent Crude (USD)', data: brentPrices, borderColor: '#10b981', tension: 0.2, fill: false },
-                { label: 'WTI Crude', data: wtiPrices, borderColor: '#3b82f6', tension: 0.2, fill: false }
-            ]},
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-        });
-        setInterval(() => {
-            brentPrices.push(Math.max(90, brentPrices[brentPrices.length-1] + (Math.random() - 0.5) * 3));
-            wtiPrices.push(Math.max(85, wtiPrices[wtiPrices.length-1] + (Math.random() - 0.5) * 2.5));
-            if(brentPrices.length > 8) { brentPrices.shift(); wtiPrices.shift(); }
-            if(marketChart) { marketChart.data.datasets[0].data = [...brentPrices]; marketChart.data.datasets[1].data = [...wtiPrices]; marketChart.update(); }
-        }, 8000);
-    }
-
-    // Global map state variables
-    let mainMap;
-    let currentMapLayer = 'dark';
-    let is3DMode = false;
-    let terrainMode = false;
-    let heatLayerVisible = false;
-    let satelliteLayer, satelliteTerrain, heatmapLayer;
-
-    function initSecurityMap() {
-        mainMap = L.map('securityMap').setView([28.5, 65.5], 6.2);
-        
-        // Base layer - Dark CartoDB (default)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-            attribution: '© CartoDB', 
-            className: 'base-layer'
-        }).addTo(mainMap);
-        
-        // Store alternative layers for quick access
-        satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, DigitalGlobe, GeoEye, Earthstar, CNES/Airbus DS',
-            maxZoom: 18
-        });
-        
-        satelliteTerrain = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© CartoDB',
-            maxZoom: 19
-        });
-        
-        // Add custom markers with enhanced styling
-        geoIncidents.forEach(inc => {
-            let color = inc.severity === 'critical' ? '#ef4444' : (inc.severity === 'high' ? '#f97316' : '#facc15');
-            let pulseClass = inc.severity === 'critical' ? 'pulse-marker' : '';
-            let iconHtml = `<div style="background:${color}; width:14px; height:14px; border-radius:50%; border:3px solid white; box-shadow:0 0 12px ${color}, 0 0 20px ${color}80; animation:${pulseClass}"></div>`;
-            let marker = L.marker([inc.lat, inc.lng], { 
-                icon: L.divIcon({ 
-                    html: iconHtml, 
-                    iconSize: [14,14], 
-                    className: 'custom-marker'
-                }) 
-            }).addTo(mainMap);
-            
-            marker.bindPopup(`
-                <div style="background:#0c1220; color:#e2edf7; padding:10px; border-radius:8px; border:1px solid #2d3e54;">
-                    <b style="color:#2dd4bf;">${inc.name}</b><br/>
-                    <span style="font-size:11px;">${inc.notes}</span><br/>
-                    <div style="margin-top:6px; font-size:10px; color:#94a3b8;">
-                        ${inc.tags.map(t => `<span style="background:#2d3e54; padding:2px 6px; border-radius:4px; display:inline-block; margin:2px;">#${t}</span>`).join('')}
-                    </div>
-                </div>
-            `);
-        });
-        
-        // Add threat zones with enhanced styling
-        L.polygon([[35,48],[35,56],[31,56],[31,48]], { 
-            color: '#f97316', 
-            weight: 2, 
-            dashArray: '6 4', 
-            fillOpacity: 0.08,
-            className: 'threat-zone'
-        }).addTo(mainMap).bindPopup("🔴 RESTRICTED AIRSPACE R-401 - No Civilian Operations");
-        
-        L.circle([25.8, 63.5], { 
-            radius: 50000, 
-            color: '#ef4444', 
-            weight: 2, 
-            fillOpacity: 0.12,
-            className: 'jamming-zone'
-        }).addTo(mainMap).bindPopup("🔴 GPS JAMMING ZONE (ECHO-1) - Electronic Warfare Active");
-        
-        // Add ESR monitoring zones
-        L.circle([30.18, 66.97], {
-            radius: 30000,
-            color: '#06b6d4',
-            weight: 1,
-            fillOpacity: 0.06,
-            dashArray: '4 2'
-        }).addTo(mainMap).bindPopup("📡 ESR MONITORING ZONE - Surveillance Active");
-        
-        L.polygon([[28, 61],[28, 64],[30, 64],[30, 61]], {
-            color: '#3b82f6',
-            weight: 1,
-            dashArray: '3 3',
-            fillOpacity: 0.05
-        }).addTo(mainMap).bindPopup("🎯 MILITARY OPERATIONS ZONE - Training Exercise");
-        
-        // Add heatmap layer (hidden by default)
-        addHeatmapLayer();
-    }
-
-    function addHeatmapLayer() {
-        // Create heatmap data from incidents
-        const heatData = geoIncidents.map(inc => [
-            inc.lat, 
-            inc.lng, 
-            inc.severity === 'critical' ? 0.9 : (inc.severity === 'high' ? 0.6 : 0.3)
-        ]);
-        
-        // Add circles at incident locations for heat visualization
-        heatData.forEach(point => {
-            L.circleMarker([point[0], point[1]], {
-                radius: point[2] * 8,
-                fillColor: point[2] > 0.7 ? '#ef4444' : (point[2] > 0.5 ? '#f97316' : '#facc15'),
-                color: '#fff',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.4
-            }).addTo(mainMap);
-        });
-    }
-
-    // ---------- ADS-B AIRCRAFT TRACKING VISUALIZATION ----------
-    let aircraftMarkers = {};
-    let flightPaths = {};
-    
-    function addADSBCoverageZones() {
-        adsCoverageZones.forEach(zone => {
-            const zoneColor = zone.coverage === 'primary' ? '#10b981' : (zone.coverage === 'secondary' ? '#3b82f6' : '#f97316');
-            L.circle([zone.lat, zone.lng], {
-                radius: zone.radius,
-                color: zoneColor,
-                weight: 1,
-                dashArray: '5 5',
-                fillOpacity: 0.04
-            }).addTo(mainMap).bindPopup(`
-                <div style="background:#0c1220; color:#e2edf7; padding:10px; border-radius:8px;">
-                    <b style="color:${zoneColor};">📡 ${zone.name}</b><br/>
-                    <span style="font-size:11px;">Coverage: ${zone.coverage.toUpperCase()}</span><br/>
-                    <span style="font-size:10px; color:#94a3b8;">Radius: ${(zone.radius/1000).toFixed(0)}km | Airports: ${zone.airports.join(', ')}</span>
-                </div>
-            `);
-        });
-    }
-    
-    function addAircraftMarkers() {
-        aircraftTracks.forEach(aircraft => {
-            const categoryIcon = aircraft.category === 'military' ? '🛩️' : (aircraft.category === 'uav' ? '🚁' : '✈️');
-            const categoryColor = aircraft.category === 'military' ? '#3b82f6' : (aircraft.category === 'uav' ? '#f97316' : '#10b981');
-            
-            // Create aircraft marker with heading indicator
-            const markerHtml = `
-                <div style="transform:rotate(${aircraft.heading}deg); font-size:20px;">
-                    ${categoryIcon}
-                </div>
-            `;
-            
-            const marker = L.marker([aircraft.lat, aircraft.lng], {
-                icon: L.divIcon({
-                    html: markerHtml,
-                    iconSize: [24, 24],
-                    className: 'aircraft-marker'
-                })
-            }).addTo(mainMap);
-            
-            const popupContent = `
-                <div style="background:#0c1220; color:#e2edf7; padding:12px; border-radius:8px; border-left:3px solid ${categoryColor}; width:220px;">
-                    <b style="color:#2dd4bf; font-size:12px;">✈️ ${aircraft.callsign}</b><br/>
-                    <div style="margin-top:6px; font-size:11px;">
-                        <div>🎫 ID: <span style="color:#10b981;">${aircraft.id}</span></div>
-                        <div>✈️ Type: <span style="color:#94a3b8;">${aircraft.type}</span></div>
-                        <div>📍 Position: <span style="color:#94a3b8;">${aircraft.lat.toFixed(4)}°, ${aircraft.lng.toFixed(4)}°</span></div>
-                        <div>⬆️ Altitude: <span style="color:#f97316;">${aircraft.altitude}ft</span></div>
-                        <div>💨 Speed: <span style="color:#10b981;">${aircraft.speed}kt</span></div>
-                        <div>🧭 Heading: <span style="color:#3b82f6;">${aircraft.heading}°</span></div>
-                        <div>🛫 Route: <span style="color:#94a3b8;">${aircraft.origin} → ${aircraft.destination}</span></div>
-                        <div>🔖 Status: <span style="color:${aircraft.status === 'en-route' ? '#10b981' : '#f97316'};">${aircraft.status.toUpperCase()}</span></div>
-                        <div>🔸 Airspace: <span style="color:#fbbf24;">${aircraft.airspace}</span></div>
-                    </div>
-                </div>
-            `;
-            
-            marker.bindPopup(popupContent);
-            aircraftMarkers[aircraft.id] = { marker: marker, data: aircraft };
-        });
-    }
-    
-    function updateAircraftPositions() {
-        // Simulate real-time aircraft position updates
-        Object.keys(aircraftMarkers).forEach(id => {
-            const aircraft = aircraftTracks.find(a => a.id === id);
-            if(aircraft) {
-                // Update position based on heading and speed
-                const speedPerFrame = aircraft.speed / 3600 * 0.001; // Convert knots to degrees per second
-                aircraft.lat += Math.sin(aircraft.heading * Math.PI / 180) * speedPerFrame;
-                aircraft.lng += Math.cos(aircraft.heading * Math.PI / 180) * speedPerFrame;
-                aircraft.altitude += (Math.random() - 0.5) * 50; // Slight altitude variation
-                
-                // Update marker position
-                aircraftMarkers[id].marker.setLatLng([aircraft.lat, aircraft.lng]);
-            }
-        });
-    }
-    
-    function renderADSBLiveFeed() {
-        const feedContainer = document.getElementById('adsbFeed');
-        if(!feedContainer) return;
-        
-        const feedHtml = aircraftTracks.map(ac => `
-            <div class="incident-item" style="flex-direction:column; align-items:flex-start; background:#0c1220aa; padding:8px; border-radius:8px; border-left:3px solid ${ac.category === 'military' ? '#3b82f6' : (ac.category === 'uav' ? '#f97316' : '#10b981')};">
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <span style="font-weight:600; color:#2dd4bf;">${ac.callsign}</span>
-                    <span class="tag" style="background:${ac.status === 'en-route' ? '#10b98140' : '#f9731640'}; color:${ac.status === 'en-route' ? '#86efac' : '#fbbf24'}; font-size:9px;">${ac.status.toUpperCase()}</span>
-                </div>
-                <div style="font-size:10px; margin-top:4px; color:#94a3b8;">
-                    📍 ${ac.lat.toFixed(4)}°N ${ac.lng.toFixed(4)}°E | ⬆️ ${ac.altitude}ft | 💨 ${ac.speed}kt | 🧭 ${ac.heading}°
-                </div>
-                <div style="font-size:9px; color:#6c86a3;">
-                    Route: ${ac.origin} → ${ac.destination} | Operator: ${ac.operator}
-                </div>
-            </div>
-        `).join('');
-        
-        feedContainer.innerHTML = feedHtml;
-    }
-
-    // ---------- ADS EXCHANGE INTEGRATION FUNCTIONS ----------
-    async function fetchADSExchangeData() {
-        if(!adsExchangeConfig.enabled) return externalAircraft;
-        
-        try {
-            // Mock API call - in production, replace with actual ADS Exchange API
-            // Example: const response = await fetch(adsExchangeConfig.apiEndpoint + `?region=${adsExchangeConfig.region}`);
-            // For now, we simulate API response with externalAircraft data
-            return externalAircraft.map(ac => ({
-                ...ac,
-                lastUpdate: new Date(),
-                // Simulate realistic position updates
-                lat: ac.lat + (Math.random() - 0.5) * 0.01,
-                lng: ac.lng + (Math.random() - 0.5) * 0.01,
-                altitude: ac.altitude + Math.floor((Math.random() - 0.5) * 200),
-                heading: (ac.heading + Math.random() * 5) % 360
-            }));
-        } catch(err) {
-            console.error("ADS Exchange API Error:", err);
-            return externalAircraft;
-        }
-    }
-
-    function addADSExchangeMarkers() {
-        externalAircraft.forEach(aircraft => {
-            const categoryColor = aircraft.category === 'commercial' ? '#8b5cf6' : 
-                                (aircraft.category === 'medical' ? '#06b6d4' : 
-                                (aircraft.category === 'freight' ? '#f59e0b' : '#6366f1'));
-            const categoryIcon = aircraft.category === 'commercial' ? '✈️' : 
-                                (aircraft.category === 'medical' ? '🏥' : 
-                                (aircraft.category === 'freight' ? '📦' : '✈️'));
-            
-            const markerHtml = `
-                <div style="transform:rotate(${aircraft.heading}deg); font-size:18px;">
-                    ${categoryIcon}
-                </div>
-            `;
-            
-            const marker = L.marker([aircraft.lat, aircraft.lng], {
-                icon: L.divIcon({
-                    html: markerHtml,
-                    iconSize: [22, 22],
-                    className: 'adsexchange-marker'
-                })
-            }).addTo(mainMap);
-            
-            const popupContent = `
-                <div style="background:#0c1220; color:#e2edf7; padding:12px; border-radius:8px; border-left:3px solid ${categoryColor}; width:240px;">
-                    <b style="color:#8b5cf6; font-size:12px;">📡 ${aircraft.callsign}</b><br/>
-                    <div style="margin-top:6px; font-size:10px;">
-                        <div>📍 ICAO: <span style="color:#94a3b8;">${aircraft.icao}</span></div>
-                        <div>✈️ Aircraft: <span style="color:#94a3b8;">${aircraft.type}</span></div>
-                        <div>🏷️ Category: <span style="color:${categoryColor};">${aircraft.category.toUpperCase()}</span></div>
-                        <div>📌 Position: <span style="color:#94a3b8;">${aircraft.lat.toFixed(4)}°N, ${aircraft.lng.toFixed(4)}°E</span></div>
-                        <div>⬆️ Altitude: <span style="color:#f97316;">${aircraft.altitude}ft</span></div>
-                        <div>💨 Speed: <span style="color:#10b981;">${aircraft.speed}kt</span></div>
-                        <div>🧭 Heading: <span style="color:#3b82f8;">${aircraft.heading.toFixed(0)}°</span></div>
-                        <div>🛫 Route: <span style="color:#94a3b8;">${aircraft.origin} → ${aircraft.destination}</span></div>
-                        <div>🔖 Status: <span style="color:#2dd4bf;">${aircraft.status.toUpperCase()}</span></div>
-                        <div>🌐 Source: <span style="color:#a78bfa;">ADS Exchange</span></div>
-                        <div style="margin-top:4px; font-size:9px; color:#6c86a3;">Operator: ${aircraft.operator} | Squawk: ${aircraft.squawk}</div>
-                    </div>
-                </div>
-            `;
-            
-            marker.bindPopup(popupContent);
-            aircraftMarkers[aircraft.id] = { marker: marker, data: aircraft, source: 'adsexchange' };
-        });
-    }
-
-    function updateADSExchangeData() {
-        // Update external aircraft positions based on ADS Exchange data
-        externalAircraft.forEach(aircraft => {
-            if(aircraftMarkers[aircraft.id]) {
-                // Update position based on current heading and speed
-                const speedPerFrame = aircraft.speed / 3600 * 0.0015;
-                aircraft.lat += Math.sin(aircraft.heading * Math.PI / 180) * speedPerFrame;
-                aircraft.lng += Math.cos(aircraft.heading * Math.PI / 180) * speedPerFrame;
-                aircraft.altitude += (Math.random() - 0.5) * 100;
-                aircraft.heading = (aircraft.heading + (Math.random() - 0.5) * 3) % 360;
-                
-                aircraftMarkers[aircraft.id].marker.setLatLng([aircraft.lat, aircraft.lng]);
-            }
-        });
-    }
-
-    function renderCombinedAircraftFeed() {
-        const feedContainer = document.getElementById('adsbFeed');
-        if(!feedContainer) return;
-        
-        // Combine military and external aircraft
-        const allAircraft = [...aircraftTracks, ...externalAircraft];
-        
-        const feedHtml = allAircraft.map(ac => {
-            const sourceColor = ac.source === 'adsexchange' ? '#8b5cf6' : 
-                               (ac.operator === 'PAF' ? '#3b82f8' : 
-                               (ac.operator === 'SSG-Ops' ? '#10b981' : 
-                               (ac.operator === 'AEC' ? '#f97316' : '#e879f9')));
-            
-            return `
-                <div class="incident-item" style="flex-direction:column; align-items:flex-start; background:#0c1220aa; padding:8px; border-radius:8px; border-left:3px solid ${sourceColor};">
-                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center; flex-wrap:wrap;">
-                        <span style="font-weight:600; color:#2dd4bf;">${ac.callsign}</span>
-                        <span class="tag" style="background:${ac.status === 'en-route' || ac.status === 'cruise' ? '#10b98140' : '#f9731640'}; color:${ac.status === 'en-route' || ac.status === 'cruise' ? '#86efac' : '#fbbf24'}; font-size:8px;">${ac.status.toUpperCase()}</span>
-                        <span class="tag" style="background:${ac.source === 'adsexchange' ? '#8b5cf640' : '#3b82f840'}; color:${ac.source === 'adsexchange' ? '#c4b5fd' : '#93c5fd'}; font-size:8px;">${ac.source === 'adsexchange' ? '📡 EXT' : '🛩️ MIL'}</span>
-                    </div>
-                    <div style="font-size:9px; margin-top:3px; color:#94a3b8;">
-                        📍 ${ac.lat.toFixed(4)}°N ${ac.lng.toFixed(4)}°E | ⬆️ ${ac.altitude}ft | 💨 ${ac.speed}kt | 🧭 ${ac.heading.toFixed(0)}°
-                    </div>
-                    <div style="font-size:8px; color:#6c86a3;">
-                        ${ac.origin} → ${ac.destination} | ${ac.operator}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        feedContainer.innerHTML = feedHtml;
-    }
-
-    function startADSBTracking() {
-        addADSBCoverageZones();
-        addAircraftMarkers();
-        addADSExchangeMarkers();
-        renderCombinedAircraftFeed();
-        
-        // Update aircraft positions periodically (military + external)
-        setInterval(() => {
-            updateAircraftPositions();
-            updateADSExchangeData();
-            renderCombinedAircraftFeed();
-        }, 3000);
-        
-        // Periodic ADS Exchange API sync (if enabled)
-        if(adsExchangeConfig.enabled) {
-            setInterval(() => {
-                fetchADSExchangeData().then(data => {
-                    externalAircraft = data;
-                    Object.keys(aircraftMarkers).forEach(id => {
-                        if(aircraftMarkers[id].source === 'adsexchange') {
-                            aircraftMarkers[id].marker.remove();
-                            delete aircraftMarkers[id];
-                        }
-                    });
-                    addADSExchangeMarkers();
-                    renderCombinedAircraftFeed();
-                });
-            }, adsExchangeConfig.updateInterval);
-        }
-    }
-
-    function toggleMapLayer() {
-        const btn = document.getElementById('mapLayerBtn');
-        if(currentMapLayer === 'dark') {
-            satelliteLayer.addTo(mainMap);
-            mainMap.eachLayer(layer => {
-                if(layer._url && layer._url.includes('cartodb')) mainMap.removeLayer(layer);
-            });
-            currentMapLayer = 'satellite';
-            btn.style.background = '#2dd4bf20';
-            btn.style.borderColor = '#2dd4bf';
-        } else {
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-                attribution: '© CartoDB'
-            }).addTo(mainMap);
-            mainMap.eachLayer(layer => {
-                if(layer._url && layer._url.includes('arcgisonline')) mainMap.removeLayer(layer);
-            });
-            currentMapLayer = 'dark';
-            btn.style.background = '#1e2a3a';
-            btn.style.borderColor = '#2d3e54';
-        }
-    }
-
-    function toggleTerrain() {
-        const btn = document.getElementById('mapTerrainBtn');
-        terrainMode = !terrainMode;
-        if(terrainMode) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    }
-
-    function toggle3DView() {
-        const btn = document.getElementById('map3DBtn');
-        is3DMode = !is3DMode;
-        if(is3DMode) {
-            btn.classList.add('active');
-            mainMap.setZoom(mainMap.getZoom() + 1);
-        } else {
-            btn.classList.remove('active');
-            mainMap.setZoom(mainMap.getZoom() - 1);
-        }
-    }
-
-    function toggleHeatLayer() {
-        const btn = document.getElementById('mapHeatBtn');
-        heatLayerVisible = !heatLayerVisible;
-        if(heatLayerVisible) {
-            btn.classList.add('active');
-            addHeatmapLayer();
-        } else {
-            btn.classList.remove('active');
-        }
-    }
-
-    function resetMapView() {
-        mainMap.setView([28.5, 65.5], 6.2);
-        currentMapLayer = 'dark';
-        is3DMode = false;
-        terrainMode = false;
-        document.getElementById('map3DBtn').classList.remove('active');
-        document.getElementById('mapTerrainBtn').classList.remove('active');
-    }
-
-    // device health mock
-    function renderDeviceHealth() {
-        document.getElementById("deviceHealth").innerHTML = `
-            <div style="display:flex; justify-content:space-between;"><span>SSG Radios:</span><span>94%</span></div><div style="background:#1e2a3a; height:4px;"><div style="width:94%; background:#2dd4bf; height:4px;"></div></div>
-            <div style="display:flex; justify-content:space-between; margin-top:8px;"><span>Drone relay:</span><span>82%</span></div><div style="background:#1e2a3a; height:4px;"><div style="width:82%; background:#2dd4bf; height:4px;"></div></div>
-            <div style="display:flex; justify-content:space-between; margin-top:8px;"><span>GPS ground station:</span><span>67%</span></div><div style="background:#1e2a3a; height:4px;"><div style="width:67%; background:#f97316; height:4px;"></div></div>
-        `;
-    }
-
-    // live traffic bar (simple)
-    function updateLiveTraffic() {
-        const container = document.getElementById("liveTrafficBar");
-        if(!container) return;
-        let val = Math.floor(40 + Math.random() * 55);
-        container.innerHTML = `<div style="margin:5px 0">Highway N-25 (Coastal): <strong>${val}%</strong> congestion</div><div style="background:#1e2a3a; border-radius:8px;"><div style="width:${val}%; background:#2dd4bf; height:6px; border-radius:8px;"></div></div>
-        <div style="margin-top:12px;">Border crossing Taftan: 48% load</div><div style="background:#1e2a3a; border-radius:8px;"><div style="width:48%; background:#facc15; height:6px;"></div></div>`;
-    }
-    setInterval(updateLiveTraffic, 9000);
-    
-    // TABS handling
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active-pane'));
-        document.getElementById(`${tabId}Pane`).classList.add('active-pane');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.dataset.tab === tabId);
-        if(activeBtn) activeBtn.classList.add('active');
-        if(tabId === 'heat') renderHeatmap();
-        if(tabId === 'geo' && mainMap) setTimeout(() => mainMap.invalidateSize(), 100);
-        if(tabId === 'analytics') { updateGauges(); renderDeviceHealth(); if(marketChart) marketChart.update(); }
-        if(tabId === 'incidents') renderIncidentGrid();
-        if(tabId === 'adsb') renderADSBLiveFeed();
-        if(tabId === 'sources') renderDataSources();
-    }
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    // also market line mini chart inside geo tab (canvas line)
-    function initGeoMarketLine() {
-        const ctxLine = document.getElementById('marketLine')?.getContext('2d');
-        if(ctxLine) {
-            new Chart(ctxLine, { type: 'line', data: { labels: ["Jan","Feb","Mar","Apr","May"], datasets: [{ label: 'Escalation Risk Index', data: [52,58,67,72,79], borderColor: '#f97316', fill: false, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#aaa' } } } } });
-        } else {
-            document.getElementById('marketLine').innerHTML = `<div style="color:#2dd4bf;">⚡ Prediction Markets: Conflict probability 73% (+4.2%)</div>`;
-        }
-    }
-
-    // final initialization
-    window.onload = () => {
-        initSecurityMap();
-        startADSBTracking();
-        initMarketChart();
-        initGeoMarketLine();
-        updateGauges();
-        renderIncidentGrid();
-        renderDataSources();
-        renderHeatmap();
-        renderDeviceHealth();
-        startWebSocketSim();
-        updateLiveTraffic();
-        // small periodic gauge updates
-        setInterval(() => { if(document.getElementById('analyticsPane').classList.contains('active-pane')) updateGauges(); }, 7000);
-        // mock ads-b sync messages for realism
-        setInterval(() => {
-            if(document.getElementById('geoPane').classList.contains('active-pane')) {
-                const alertDiv = document.getElementById("alertFeed");
-                const sysMsg = document.createElement("div");
-                sysMsg.className = "incident-item";
-                sysMsg.innerHTML = `<span>✈️</span> ADS-B: ${aircraftTracks.length} aircraft tracking | ${Math.floor(Math.random()*10)} new contacts`;
-                alertDiv.prepend(sysMsg);
-                if(alertDiv.children.length > 6) alertDiv.removeChild(alertDiv.lastChild);
-            }
-        }, 18000);
-        // periodic data source updates
-        setInterval(() => {
-            if(document.getElementById('sourcesPane').classList.contains('active-pane')) {
-                renderDataSources();
-            }
-        }, 15000);
-    };
+// ======================= LAYER TOGGLE =======================
+window.toggleMapLayer = (layer) => {
+  if(!mapView) return;
+  const states = { air: true, maritime: false, gps: false, threat: true, intercept: false };
+  if(layer === 'air') { states.air ? mapLayers.air.addTo(mapView) : mapLayers.air.remove(); }
+  if(layer === 'maritime') { states.maritime ? mapLayers.maritime.addTo(mapView) : mapLayers.maritime.remove(); }
+  if(layer === 'gps') { states.gps ? mapLayers.gps.addTo(mapView) : mapLayers.gps.remove(); }
+  if(layer === 'threat') { states.threat ? mapLayers.threat.addTo(mapView) : mapLayers.threat.remove(); }
+  if(layer === 'intercept') { states.intercept ? mapLayers.intercept.addTo(mapView) : mapLayers.intercept.remove(); }
+};
+window.showView = (view) => {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+  if(view === 'overview') { if(!mapView) initOverviewMap(); else setTimeout(() => mapView.invalidateSize(), 100); fetchOpenSky(); }
+  if(view === 'airdef') { if(!mapAir) initAirDefenseMap(); else mapAir.invalidateSize(); }
+  if(view === 'media') { renderNewsFeed(); document.getElementById('auth-percent').innerText = Math.floor(70+Math.random()*20)+'%'; let chk = document.getElementById('media-checklist'); if(chk) chk.innerHTML = '<div>✓ Domain age verification</div><div>✓ Multi-source crossref</div><div>◌ Deepfake detection pending</div>'; }
+  if(view === 'sentiment') runSentimentAnalysis();
+};
+setInterval(fetchOpenSky, 16000);
+setInterval(fetchAllRSS, 75000);
+window.init = () => { fetchOpenSky(); fetchAllRSS(); setInterval(()=>{document.getElementById('clock').innerText=new Date().toISOString().slice(11,19)+' UTC';},1000); };
+window.onload = () => { init(); showView('overview'); };
+window.mockWhois = mockWhois;
 </script>
 </body>
 </html>
